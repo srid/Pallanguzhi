@@ -1,29 +1,40 @@
 import Html exposing (..)
 import Html.App
 
+import Dayakattai.Msg exposing (Msg)
+import Dayakattai.Msg as Msg
+import Dayakattai.View as View
+
+import Dayakattai.Board as Board
+
+
 -- Model
 
-type alias Model = Int
+type alias Model =
+  { board : Board.Model }
+
+emptyModel : Model
+emptyModel =
+  { board = Board.emptyModel }
 
 init : (Model, Cmd Msg)
 init =
-  (1, Cmd.none)
+  ( emptyModel
+  , Cmd.none)
 
 -- Update
-
-type Msg = NoOp
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    NoOp ->
+    Msg.NoOp ->
       (model, Cmd.none)
 
 -- view
 
 view : Model -> Html Msg
 view model =
-  text "Hello"
+  View.viewBoard model.board
 
 main : Program Never
 main =
