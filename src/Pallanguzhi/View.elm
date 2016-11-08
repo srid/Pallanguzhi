@@ -1,23 +1,24 @@
 module Pallanguzhi.View exposing (..)
 
 import Html exposing (..)
+import Html.Attributes exposing (..)
 
 import Pallanguzhi.Msg exposing (Msg)
 import Pallanguzhi.Board as Board
 
-viewBoard : Board.Model -> Html Msg
+viewBoard : Board.Board -> Html Msg
 viewBoard board =
   div []
     [ h2 [] [text "Player A"]
-    , viewPlayer board.playerA
+    , viewCups <| Board.cupsA board
     , h2 [] [text "Player B"]
-    , viewPlayer board.playerB
+    , viewCups <| List.reverse <| Board.cupsB board
     ]
 
-viewPlayer : Board.Player -> Html Msg
-viewPlayer =
-  div [] << List.map viewChip << .chips
+viewCups : List Board.Cup -> Html Msg
+viewCups =
+  div [] << List.map viewCup
 
-viewChip : Board.Chip -> Html Msg
-viewChip chip =
-  div [] [text <| toString chip.location]
+viewCup : Board.Cup -> Html Msg
+viewCup (Board.Cup count) =
+  span [class "cup"] [text <| toString count]

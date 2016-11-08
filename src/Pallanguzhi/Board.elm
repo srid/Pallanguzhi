@@ -1,30 +1,24 @@
 module Pallanguzhi.Board exposing (..)
 
-type alias Model =
-  { playerA : Player
-  , playerB : Player }
+import List
 
-emptyModel : Model
-emptyModel =
-  { playerA = emptyPlayer
-  , playerB = emptyPlayer }
+type alias Board =
+  { cups : List Cup
+  }
 
-type alias Player =
-  { chips : List Chip }
+type Cup = Cup Int
 
-emptyPlayer : Player
-emptyPlayer =
-  let totalChips = 6
-  in  { chips = List.repeat totalChips emptyChip }
+emptyBoard : Board
+emptyBoard =
+  { cups = List.repeat 14 emptyCup }
 
-type alias Chip =
-  { location : Location }
+emptyCup : Cup
+emptyCup = Cup 0
 
-emptyChip : Chip
-emptyChip =
-  { location = emptyLocation }
+cupsA : Board -> List Cup
+cupsA board =
+  List.take 7 board.cups
 
-type Location = Location Int
-
-emptyLocation : Location
-emptyLocation = Location 0
+cupsB : Board -> List Cup
+cupsB board =
+  List.drop 7 board.cups
