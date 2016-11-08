@@ -1,4 +1,4 @@
-module Dayakattai.Board exposing (..)
+module Pallanguzhi.Board exposing (..)
 
 type alias Model =
   { playerA : Player

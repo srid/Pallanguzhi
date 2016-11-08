@@ -1,9 +1,9 @@
-module Dayakattai.View exposing (..)
+module Pallanguzhi.View exposing (..)
 
 import Html exposing (..)
 
-import Dayakattai.Msg exposing (Msg)
-import Dayakattai.Board as Board
+import Pallanguzhi.Msg exposing (Msg)
+import Pallanguzhi.Board as Board
 
 viewBoard : Board.Model -> Html Msg
 viewBoard board =

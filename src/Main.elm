@@ -1,11 +1,11 @@
 import Html exposing (..)
 import Html.App
 
-import Dayakattai.Msg exposing (Msg)
-import Dayakattai.Msg as Msg
-import Dayakattai.View as View
+import Pallanguzhi.Msg exposing (Msg)
+import Pallanguzhi.Msg as Msg
+import Pallanguzhi.View as View
 
-import Dayakattai.Board as Board
+import Pallanguzhi.Board as Board
 
 
 -- Model

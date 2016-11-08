@@ -1,7 +1,7 @@
 {
     "version": "1.0.0",
-    "summary": "Dayakattai, an Indian dice game played by two to four people",
-    "repository": "https://github.com/happyandharmless/dayakattai.git",
+    "summary": "Pallanguzhi, an Indian board game played by two people",
+    "repository": "https://github.com/happyandharmless/pallanguzhi.git",
     "license": "BSD3",
     "source-directories": [
         "src"
