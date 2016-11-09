@@ -30,7 +30,7 @@ view state =
   div
     []
     [ h1 [] [ text  "Pallanguzhi" ]
-    , p [] [ text "Change src/Layout.purs and watch me hot-reload." ]
+    , p [] [ text "Here is the game board:" ]
     , case state.route of
         Home ->
           map Child $ Board.view state.board
