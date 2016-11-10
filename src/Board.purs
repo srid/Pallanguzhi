@@ -3,11 +3,12 @@ module App.Board where
 import Matrix as Matrix
 import CSS (inline)
 import Data.Function ((#))
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromJust)
 import Matrix (Matrix)
+import Partial.Unsafe (unsafePartial)
 import Prelude (($), show, map, bind)
 import Pux.CSS (display, em, padding, rgb, backgroundColor, style)
-import Pux.Html (Html, div, span, text)
+import Pux.Html (Html, div, text)
 
 data Action = Reset | Move Player
 
@@ -19,8 +20,11 @@ type State =
 
 data Player = A | B
 
-notPossible :: Array Cell
-notPossible = [99, 99, 99, 99, 99, 99, 99]
+playerACells :: State -> Array Cell
+playerACells state = unsafePartial fromJust $ Matrix.getRow 0 state.cells
+
+playerBCells :: State -> Array Cell
+playerBCells state = unsafePartial fromJust $ Matrix.getRow 1 state.cells
 
 init :: State
 init =
@@ -34,12 +38,10 @@ update (Move player) state = state
 view :: State -> Html Action
 view state =
   div []
-  [ div [] $ map viewCell $ row 0
-  , div [] [ text "sep" ] -- XXX: remove this ugly display hack 
-  , div [] $ map viewCell $ row 1
+  [ div [] $ map viewCell $ playerACells state
+  , div [] [ text "sep" ] -- XXX: remove this ugly display hack
+  , div [] $ map viewCell $ playerBCells state
   ]
-  where
-    row n = fromMaybe notPossible $ Matrix.getRow n state.cells
 
 viewCell :: Cell -> Html Action
 viewCell count =
