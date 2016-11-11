@@ -38,16 +38,15 @@ rows board =
     ( f List.take board.pits
     , f List.drop board.pits
     )
-    
-fromJust : Maybe a -> a
-fromJust x = case x of
-    Just y -> y
-    Nothing -> Debug.crash "error: fromJust Nothing"
 
 lookup : Int -> Board -> Pit
 lookup idx board = 
-  Array.get idx board.pits
-  |> fromJust
+  case Array.get idx board.pits of
+    Just pit -> 
+      pit
+    Nothing  -> 
+      -- Invalid index is only possible due to programmer error.
+      Debug.crash <| "error: invalid index: " ++ (toString idx)
 
 next : Int -> Int
 next idx
@@ -72,39 +71,53 @@ clear : Int -> Board -> Board
 clear idx board =
   updateSeeds idx (always 0) board
 
-store : Int -> Board -> Board
-store seeds board =
-  { board | storeA = board.storeA + seeds }
+store : Player -> Int -> Board -> Board
+store player seeds board =
+  case player of
+    A -> { board | storeA = board.storeA + seeds }
+    B -> { board | storeA = board.storeB + seeds }
 
-capture : Int -> Board -> Board
-capture idx board = 
+capture : Player -> Int -> Board -> Board
+capture player idx board = 
   let 
     c = lookup idx board |> .seeds
   in
-    board |> clear idx |> store c 
-
-validateF : (a -> Bool) -> a -> Maybe a
-validateF f v = if f v then Just v else Nothing
-
+    board |> clear idx |> store player c 
 
 sow : Int -> Board -> Board
 sow idx board =
+  let 
+    pit = lookup idx board
+  in
+    sowAs pit.player idx board
+
+sowAs : Player -> Int -> Board -> Board
+sowAs player idx board =
   let
     hand = lookup idx board |> .seeds
     spread hand idx board =
       let 
         lk idx = board |> lookup idx |> .seeds
+        idxN   = next idx
+        idxNN  = next idxN
       in
         case hand of
           0 -> -- Empty hand
-            case (lk idx, lk (idx |> next)) of
+            case (lk idx, lk idxN) of
               (0, 0) -> -- Both empty, end turn.
                 board
-              (0, c) -> -- Capture next and move on.
-                board |> capture (idx |> next) |> sow (idx |> next |> next) 
+              (0, _) -> -- Capture next and move on.
+                board 
+                |> capture player idxN
+                |> sowAs   player idxNN
               (_, _) -> -- Continue digging.
-                board |> sow idx
+                board 
+                |> sowAs player idx
           _ -> 
-            board |> inc idx |> spread (hand-1) (idx |> next) 
+            board 
+            |> inc             idx 
+            |> spread (hand-1) idxN
   in
-    board |> clear idx |> spread hand (idx |> next)
+    board 
+    |> clear       idx 
+    |> spread hand (next idx)
