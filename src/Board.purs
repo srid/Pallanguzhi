@@ -6,17 +6,20 @@ import Data.Function ((#))
 import Data.Maybe (fromJust)
 import Matrix (Matrix)
 import Partial.Unsafe (unsafePartial)
-import Prelude (($), show, map, bind)
+import Prelude (bind, map, show, ($))
 import Pux.CSS (display, em, padding, rgb, backgroundColor, style)
 import Pux.Html (Html, div, text)
+import Pux.Html.Attributes (value)
+import Pux.Html.Events (MouseEvent, onClick)
 
-data Action = Reset | Move Player
+data Action = Reset | Move MouseEvent
 
 type Cell = Int
 
 type State =
   { cells :: Matrix Cell
-  , nextMove :: Player }
+  , nextMove :: Player
+  }
 
 data Player = A | B
 
@@ -28,26 +31,27 @@ playerBCells state = unsafePartial fromJust $ Matrix.getRow 1 state.cells
 
 init :: State
 init =
-  { cells: Matrix.repeat 7 2 0
-  , nextMove: A }
+  { cells: Matrix.repeat 7 2 12
+  , nextMove: A
+  }
 
 update :: Action -> State -> State
 update Reset state = init
-update (Move player) state = state
+update (Move event) state = state
 
 view :: State -> Html Action
 view state =
   div []
   [ div [] $ map viewCell $ playerACells state
-  , div [] [ text "sep" ] -- XXX: remove this ugly display hack
+  , div [] [ text "." ] -- XXX: remove this ugly display hack
   , div [] $ map viewCell $ playerBCells state
   ]
 
 viewCell :: Cell -> Html Action
 viewCell count =
-  div [s] [ text $ show count ]
+  div [st, value "Sample", onClick Move] [ text $ show count ]
   where
-    s = style $ do
+    st = style $ do
       display inline
       backgroundColor (rgb 200 100 0)
       squarePadding (1.0 # em)
