@@ -29,6 +29,7 @@ initialBoard =
     , storeA = 0
     , storeB = 0
     }
+    |> dig 0
 
 rows : Board -> (List Pit, List Pit)
 rows board = 
@@ -84,40 +85,38 @@ capture player idx board =
   in
     board |> clear idx |> store player c 
 
-sow : Int -> Board -> Board
-sow idx board =
+dig : Int -> Board -> Board
+dig idx board =
   let 
     pit = lookup idx board
   in
-    sowAs pit.player idx board
+    digAs pit.player idx board
 
-sowAs : Player -> Int -> Board -> Board
-sowAs player idx board =
+digAs : Player -> Int -> Board -> Board
+digAs player idx board =
   let
     hand = lookup idx board |> .seeds
-    spread hand idx board =
-      let 
-        lk idx = board |> lookup idx |> .seeds
-        idxN   = next idx
-        idxNN  = next idxN
-      in
-        case hand of
-          0 -> -- Empty hand
-            case (lk idx, lk idxN) of
-              (0, 0) -> -- Both empty, end turn.
-                board
-              (0, _) -> -- Capture next and move on.
-                board 
-                |> capture player idxN
-                |> sowAs   player idxNN
-              (_, _) -> -- Continue digging.
-                board 
-                |> sowAs player idx
-          _ -> 
-            board 
-            |> inc             idx 
-            |> spread (hand-1) idxN
   in
     board 
-    |> clear       idx 
-    |> spread hand (next idx)
+    |> clear    idx 
+    |> sowAs player hand (next idx)
+
+sowAs : Player -> Int -> Int -> Board -> Board
+sowAs player hand idx board =
+  let 
+    lk idx = board |> lookup idx |> .seeds
+    idxN   = next idx
+    idxNN  = next idxN
+  in
+    board
+    |> case (hand, lk idx, lk idxN) of
+      (0, 0, 0) -> -- No hand, next two pits empty. End turn.
+        identity
+      (0, 0, _) -> -- Empty pit. Capture next and move on.
+        capture player idxN
+        >> digAs player idxNN
+      (0, _, _) -> -- Continue digging.
+        digAs player idx
+      _ -> -- Sow 1 seed and continue digging.
+        inc idx
+        >> sowAs player (hand-1) idx
