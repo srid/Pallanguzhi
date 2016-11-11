@@ -15,7 +15,7 @@ type alias Model =
 
 emptyModel : Model
 emptyModel =
-  { board = Board.emptyBoard }
+  { board = Board.initialBoard }
 
 init : (Model, Cmd Msg)
 init =
@@ -30,11 +30,12 @@ update msg model =
     Msg.NoOp ->
       (model, Cmd.none)
 
--- view
+-- View
 
 view : Model -> Html Msg
 view model =
   View.viewBoard model.board
+
 
 main : Program Never
 main =
