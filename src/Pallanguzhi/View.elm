@@ -14,10 +14,13 @@ viewBoard board =
     (pitsA, pitsB) = Board.rows board
   in 
     div []
-      [ h2 [] [text "Player A"]
+      [ viewStore board.storeA
+      , hr [] []
       , viewPits pitsA
-      , h2 [] [text "Player B"]
+      , hr [] []
       , viewPits (List.reverse pitsA)
+      , hr [] []
+      , viewStore board.storeB
       ]
 
 viewPits : List Board.Pit -> Html Msg
@@ -29,9 +32,18 @@ viewPit pit =
   let
     s = styles
           [ Css.backgroundColor <| hex "11ff00"
-          , Css.padding <| Css.em 1 ]
+          , Css.padding <| Css.em 1
+          , Css.margin <| Css.px 1 ]
   in
     span [s] [text <| toString pit.seeds]
+
+viewStore : Int -> Html Msg
+viewStore seeds = 
+  let s = styles 
+            [ Css.backgroundColor <| hex "aa3300"
+            , Css.padding <| Css.em 1 ]
+  in
+    div [s] [text <| toString seeds]
 
 styles : List Css.Mixin -> Attribute a
 styles =
