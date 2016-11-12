@@ -11,11 +11,11 @@ import Pallanguzhi.Board as Board
 -- Model
 
 type alias Model =
-  { board : Board.Board }
+  { board : Board.Model }
 
 emptyModel : Model
 emptyModel =
-  { board = Board.initialBoard }
+  { board = Board.initialModel }
 
 init : (Model, Cmd Msg)
 init =

@@ -5,11 +5,25 @@ import Array exposing (Array)
 import Maybe
 import Debug
 
-type alias Board =
+type alias PitLocation = Int
+
+type alias Model =
   { pits   : Array Pit
   , storeA : Int
   , storeB : Int
   }
+
+type Msg 
+  = Reset
+  | Play Player PitLocation
+
+update : Msg -> Model -> (Model, Cmd Msg)
+update msg model =
+  case msg of
+    Reset ->
+      (initialModel, Cmd.none)
+    Play player pitLoc ->
+      (digAs player pitLoc model, Cmd.none)
 
 type Player = A | B 
 type alias Pit = { player : Player, seeds : Int}
@@ -20,8 +34,8 @@ pitsPerPlayer = 7
 seedsPerPit : number
 seedsPerPit = 12
 
-initialBoard : Board
-initialBoard = 
+initialModel : Model
+initialModel = 
   let 
     makeRow player = Array.repeat pitsPerPlayer {player = player, seeds = seedsPerPit}
   in
@@ -31,18 +45,18 @@ initialBoard =
     }
     |> dig 0
 
-rows : Board -> (List Pit, List Pit)
-rows board = 
+rows : Model -> (List Pit, List Pit)
+rows model = 
   let 
     f g = Array.toList >> g pitsPerPlayer
   in 
-    ( f List.take board.pits
-    , f List.drop board.pits
+    ( f List.take model.pits
+    , f List.drop model.pits
     )
 
-lookup : Int -> Board -> Pit
-lookup idx board = 
-  case Array.get idx board.pits of
+lookup : Int -> Model -> Pit
+lookup idx model = 
+  case Array.get idx model.pits of
     Just pit -> 
       pit
     Nothing  -> 
@@ -56,59 +70,59 @@ next idx
     in 
       (idx + 1) % total
 
-updateSeeds : Int -> (Int -> Int) -> Board -> Board
-updateSeeds idx f board =
+updateSeeds : Int -> (Int -> Int) -> Model -> Model
+updateSeeds idx f model =
   let 
-    pit = lookup idx board
-    pits = Array.set idx { pit | seeds = f pit.seeds } board.pits
+    pit = lookup idx model
+    pits = Array.set idx { pit | seeds = f pit.seeds } model.pits
   in
-    { board | pits = pits }
+    { model | pits = pits }
 
-inc : Int -> Board -> Board
-inc idx board =
-  updateSeeds idx (\s -> s + 1)  board
+inc : Int -> Model -> Model
+inc idx model =
+  updateSeeds idx (\s -> s + 1)  model
 
-clear : Int -> Board -> Board
-clear idx board =
-  updateSeeds idx (always 0) board
+clear : Int -> Model -> Model
+clear idx model =
+  updateSeeds idx (always 0) model
 
-store : Player -> Int -> Board -> Board
-store player seeds board =
+store : Player -> Int -> Model -> Model
+store player seeds model =
   case player of
-    A -> { board | storeA = board.storeA + seeds }
-    B -> { board | storeA = board.storeB + seeds }
+    A -> { model | storeA = model.storeA + seeds }
+    B -> { model | storeA = model.storeB + seeds }
 
-capture : Player -> Int -> Board -> Board
-capture player idx board = 
+capture : Player -> Int -> Model -> Model
+capture player idx model = 
   let 
-    c = lookup idx board |> .seeds
+    c = lookup idx model |> .seeds
   in
-    board |> clear idx |> store player c 
+    model |> clear idx |> store player c 
 
-dig : Int -> Board -> Board
-dig idx board =
+dig : Int -> Model -> Model
+dig idx model =
   let 
-    pit = lookup idx board
+    pit = lookup idx model
   in
-    digAs pit.player idx board
+    digAs pit.player idx model
 
-digAs : Player -> Int -> Board -> Board
-digAs player idx board =
+digAs : Player -> Int -> Model -> Model
+digAs player idx model =
   let
-    hand = lookup idx board |> .seeds
+    hand = lookup idx model |> .seeds
   in
-    board 
-    |> clear    idx 
+    model 
+    |> clear idx 
     |> sowAs player hand (next idx)
 
-sowAs : Player -> Int -> Int -> Board -> Board
-sowAs player hand idx board =
+sowAs : Player -> Int -> Int -> Model -> Model
+sowAs player hand idx model =
   let 
-    lk idx = board |> lookup idx |> .seeds
+    lk idx = model |> lookup idx |> .seeds
     idxN   = next idx
     idxNN  = next idxN
   in
-    board
+    model
     |> case (hand, lk idx, lk idxN) of
       (0, 0, 0) -> -- No hand, next two pits empty. End turn.
         identity
@@ -119,4 +133,4 @@ sowAs player hand idx board =
         digAs player idx
       _ -> -- Sow 1 seed and continue digging.
         inc idx
-        >> sowAs player (hand-1) idx
+        >> sowAs player (hand-1) idxN

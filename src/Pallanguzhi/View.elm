@@ -8,7 +8,7 @@ import Css exposing (hex)
 import Pallanguzhi.Msg exposing (Msg)
 import Pallanguzhi.Board as Board
 
-viewBoard : Board.Board -> Html Msg
+viewBoard : Board.Model -> Html Msg
 viewBoard board =
   let
     (pitsA, pitsB) = Board.rows board
