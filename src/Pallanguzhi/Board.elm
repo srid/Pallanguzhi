@@ -90,7 +90,7 @@ store : Player -> Int -> Model -> Model
 store player seeds model =
   case player of
     A -> { model | storeA = model.storeA + seeds }
-    B -> { model | storeA = model.storeB + seeds }
+    B -> { model | storeB = model.storeB + seeds }
 
 capture : Player -> Int -> Model -> Model
 capture player idx model = 
