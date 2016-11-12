@@ -2,13 +2,14 @@ module Pallanguzhi.View exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (onClick)
 import Css
 import Css exposing (hex)
 
-import Pallanguzhi.Msg exposing (Msg)
+import Pallanguzhi.Msg as Msg
 import Pallanguzhi.Board as Board
 
-viewBoard : Board.Model -> Html Msg
+viewBoard : Board.Model -> Html Msg.Msg
 viewBoard board =
   let
     (pitsA, pitsB) = Board.rows board
@@ -16,28 +17,28 @@ viewBoard board =
     div []
       [ viewStore board.storeA
       , hr [] []
-      , viewPits pitsA
+      , viewPits Board.A pitsA
       , hr [] []
-      , viewPits (List.reverse pitsA)
+      , viewPits Board.B (List.reverse pitsA)
       , hr [] []
       , viewStore board.storeB
       ]
 
-viewPits : List Board.Pit -> Html Msg
-viewPits =
-  div [] << List.map viewPit
+viewPits : Board.Player -> List Board.Pit -> Html Msg.Msg
+viewPits player =
+  div [] << List.indexedMap (viewPit player)
 
-viewPit : Board.Pit -> Html Msg
-viewPit pit =
+viewPit : Board.Player -> Int -> Board.Pit -> Html Msg.Msg
+viewPit player pitLoc pit =
   let
     s = styles
           [ Css.backgroundColor <| hex "11ff00"
           , Css.padding <| Css.em 1
           , Css.margin <| Css.px 1 ]
   in
-    span [s] [text <| toString pit.seeds]
+    span [s, onClick <| Msg.Board <| Board.Play player pitLoc] [text <| toString pit.seeds]
 
-viewStore : Int -> Html Msg
+viewStore : Int -> Html Msg.Msg
 viewStore seeds = 
   let s = styles 
             [ Css.backgroundColor <| hex "aa3300"

@@ -29,6 +29,11 @@ update msg model =
   case msg of
     Msg.NoOp ->
       (model, Cmd.none)
+    Msg.Board action ->
+      let 
+        (model', cmd') = Board.update action model.board
+      in
+        ({model | board = model'}, Cmd.map Msg.Board cmd')
 
 -- View
 
