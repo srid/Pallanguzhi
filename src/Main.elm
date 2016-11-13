@@ -3,8 +3,6 @@ import Html.App
 import Return
 import Return exposing (Return)
 
-import Pallanguzhi.Msg exposing (Msg)
-import Pallanguzhi.Msg as Msg
 import Pallanguzhi.Board.ModelE as BoardComponent
 
 
@@ -18,24 +16,32 @@ init : Return Msg Model
 init = { board = BoardComponent.init }
        |> Return.singleton
 
+-- Msg
+      
+type Msg 
+  = NoOp
+  | BoardMsg BoardComponent.Msg
+
 -- Update
 
 update : Msg -> Model -> Return Msg Model
 update msg model =
   case msg of
-    Msg.NoOp ->
+    NoOp ->
       Return.singleton model
-    Msg.Board action ->
-      model.board
+    BoardMsg action ->
+      model
+      |> .board
       |> BoardComponent.update action
-      |> Return.mapBoth Msg.Board (\b -> {model | board = b})
+      |> Return.mapBoth BoardMsg (\b -> {model | board = b})
 
 -- View
 
 view : Model -> Html Msg
-view model =
-  BoardComponent.view model.board
-
+view =
+  .board
+  >> BoardComponent.view 
+  >> Html.App.map BoardMsg
 
 main : Program Never
 main =

@@ -6,11 +6,10 @@ import Html.Events exposing (onClick)
 import Css
 import Css exposing (hex)
 
-import Pallanguzhi.Msg as Msg
 import Pallanguzhi.Board.Model exposing (Model)
 import Pallanguzhi.Board.Model as Model
 
-viewBoard : Model -> Maybe String -> Html Msg.Msg
+viewBoard : Model -> Maybe String -> Html Model.Msg
 viewBoard board errorMaybe =
   let
     (pitsA, pitsB) = Model.rows board
@@ -35,11 +34,11 @@ viewError errorMaybe =
     Just e -> 
       div [] [ text <| "Error: " ++ e ]
 
-viewPits : Model.Player -> List Model.Pit -> Html Msg.Msg
+viewPits : Model.Player -> List Model.Pit -> Html Model.Msg
 viewPits player =
   div [] << List.indexedMap (viewPit player)
 
-viewPit : Model.Player -> Int -> Model.Pit -> Html Msg.Msg
+viewPit : Model.Player -> Int -> Model.Pit -> Html Model.Msg
 viewPit player pitLoc pit =
   let
     s = styles
@@ -47,9 +46,9 @@ viewPit player pitLoc pit =
           , Css.padding <| Css.em 1
           , Css.margin <| Css.px 1 ]
   in
-    span [s, onClick <| Msg.Board <| Model.Play player pitLoc] [text <| toString pit.seeds]
+    span [s, onClick <| Model.Play player pitLoc] [text <| toString pit.seeds]
 
-viewStore : Int -> Html Msg.Msg
+viewStore : Int -> Html Model.Msg
 viewStore seeds = 
   let s = styles 
             [ Css.backgroundColor <| hex "aa3300"
