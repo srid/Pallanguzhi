@@ -8,11 +8,12 @@ import Css exposing (hex)
 
 import Pallanguzhi.Board.Model exposing (Model)
 import Pallanguzhi.Board.Model as Model
+import Pallanguzhi.Board.SvgView as SvgView
 
-type alias PitClickF msg
+type alias PitClickF a
   =  Model.Player 
   -> Model.PitLocation 
-  -> msg 
+  -> a 
 
 viewC : PitClickF a -> Model -> Html a
 viewC f board =
@@ -27,6 +28,8 @@ viewC f board =
       , viewPits f Model.B (List.reverse pitsA)
       , hr [] []
       , viewStore board.storeB
+      , hr [] []
+      , SvgView.view
       ]
 
 viewPits : PitClickF a -> Model.Player -> List Model.Pit -> Html a
