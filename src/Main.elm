@@ -4,18 +4,18 @@ import Html.App
 import Pallanguzhi.Msg exposing (Msg)
 import Pallanguzhi.Msg as Msg
 import Pallanguzhi.View as View
-
 import Pallanguzhi.Board as Board
 
+import Util.ModelE as ModelE
 
 -- Model
 
 type alias Model =
-  { board : Board.Model }
+  { board : ModelE.ModelE String Board.Model }
 
 emptyModel : Model
 emptyModel =
-  { board = Board.initialModel }
+  { board = Ok Board.initialModel }
 
 init : (Model, Cmd Msg)
 init =
@@ -31,7 +31,7 @@ update msg model =
       (model, Cmd.none)
     Msg.Board action ->
       let 
-        (model', cmd') = Board.update action model.board
+        (model', cmd') = (ModelE.updateE Board.update) action model.board
       in
         ({model | board = model'}, Cmd.map Msg.Board cmd')
 
@@ -39,7 +39,7 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-  View.viewBoard model.board
+  (ModelE.viewE View.viewBoard) model.board
 
 
 main : Program Never
