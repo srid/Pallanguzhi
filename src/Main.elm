@@ -1,5 +1,7 @@
 import Html exposing (..)
 import Html.App
+import Return
+import Return exposing (Return)
 
 import Pallanguzhi.Msg exposing (Msg)
 import Pallanguzhi.Msg as Msg
@@ -11,29 +13,24 @@ import Util.ModelE as ModelE
 -- Model
 
 type alias Model =
-  { board : ModelE.ModelE String Board.Model }
+  { board : ModelE.ModelE String Board.Model 
+  }
 
-emptyModel : Model
-emptyModel =
-  { board = Ok Board.initialModel }
-
-init : (Model, Cmd Msg)
-init =
-  ( emptyModel
-  , Cmd.none)
+init : Return Msg Model
+init = { board = Ok Board.init}
+       |> Return.singleton
 
 -- Update
 
-update : Msg -> Model -> (Model, Cmd Msg)
+update : Msg -> Model -> Return Msg Model
 update msg model =
   case msg of
     Msg.NoOp ->
-      (model, Cmd.none)
+      Return.singleton model
     Msg.Board action ->
-      let 
-        (model', cmd') = (ModelE.update Board.updateR) action model.board
-      in
-        ({model | board = model'}, Cmd.map Msg.Board cmd')
+      model.board
+      |> (ModelE.update Board.updateR) action
+      |> Return.mapBoth Msg.Board (\b -> {model | board = b})
 
 -- View
 

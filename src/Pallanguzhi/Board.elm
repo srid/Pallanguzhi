@@ -5,6 +5,9 @@ import Array exposing (Array)
 import Maybe
 import Debug
 
+import Return
+import Return exposing (Return)
+
 type Player = A | B 
 type alias PitLocation = Int
 type alias Pit = { player : Player, seeds : Int}
@@ -26,14 +29,16 @@ type Msg
   = Reset
   | Play Player PitLocation
 
-updateR : Msg -> Model -> Result String (Model, Cmd Msg)
+updateR : Msg -> Model -> Result String (Return Msg Model)
 updateR msg model =
-  case msg of
+  (case msg of
     Reset ->
-      Ok (initialModel, Cmd.none)
+      init
+      |> Ok
     Play player pitLoc ->
-      dig player pitLoc model
-      |> Result.map (\model -> (model, Cmd.none))
+      model
+      |> dig player pitLoc)
+  |> Result.map Return.singleton
 
 pitsPerPlayer : number
 pitsPerPlayer = 7
@@ -41,8 +46,8 @@ pitsPerPlayer = 7
 seedsPerPit : number
 seedsPerPit = 12
 
-initialModel : Model
-initialModel = 
+init : Model
+init = 
   let 
     s = 
       seedsPerPit

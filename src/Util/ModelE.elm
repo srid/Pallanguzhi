@@ -1,6 +1,8 @@
 module Util.ModelE exposing (..)
 
 import Html exposing (Html)
+import Return
+import Return exposing (Return)
 
 type alias ModelE e model = Result (e, model) model
 
@@ -12,19 +14,19 @@ getModel r =
     Err (_, model) ->
       model
 
-update : (msg -> model -> Result e (model, Cmd msg)) -> msg -> ModelE e model -> (ModelE e model, Cmd msg)
+update : (msg -> model -> Result e (Return msg model))
+      -> msg 
+      -> ModelE e model 
+      -> Return msg (ModelE e model)
 update update msg modelE =
   let 
-    model = 
-      getModel modelE
-    r = 
-      update msg model
+    model = getModel modelE
   in 
-    case r of
-      Err error ->
-        (Err (error, model), Cmd.none)
-      Ok (model, cmd) ->
-        (Ok model, cmd)
+    case (update msg model) of
+      Err e ->
+        Return.singleton <| Err (e, model)
+      Ok r ->
+        Return.map Ok r
 
 view : (model -> Maybe e -> Html msg) -> ModelE e model -> Html msg 
 view view = asMaybe view
