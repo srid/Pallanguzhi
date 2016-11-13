@@ -3,24 +3,27 @@ import Html.App
 import Return
 import Return exposing (Return)
 
-import Pallanguzhi.Board.ModelE as BoardComponent
+import Pallanguzhi.Game.Model as Game
+import Pallanguzhi.Game.View as GameView
 
+import Util.ModelE exposing (ModelES)
+import Util.ModelE as ModelE
 
 -- Model
 
 type alias Model =
-  { board : BoardComponent.Model
+  { game : ModelES Game.Model
   }
 
 init : Return Msg Model
-init = { board = BoardComponent.init }
+init = { game = ModelE.init Game.init }
        |> Return.singleton
 
 -- Msg
       
 type Msg 
   = NoOp
-  | BoardMsg BoardComponent.Msg
+  | GameMsg Game.Msg
 
 -- Update
 
@@ -29,19 +32,19 @@ update msg model =
   case msg of
     NoOp ->
       Return.singleton model
-    BoardMsg action ->
+    GameMsg action ->
       model
-      |> .board
-      |> BoardComponent.update action
-      |> Return.mapBoth BoardMsg (\b -> {model | board = b})
+      |> .game
+      |> (ModelE.update Game.updateR) action
+      |> Return.mapBoth GameMsg (\g -> {model | game = g})
 
 -- View
 
 view : Model -> Html Msg
 view =
-  .board
-  >> BoardComponent.view 
-  >> Html.App.map BoardMsg
+  .game
+  >> (ModelE.view GameView.view)
+  >> Html.App.map GameMsg
 
 main : Program Never
 main =

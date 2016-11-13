@@ -5,9 +5,6 @@ import Array exposing (Array)
 import Maybe
 import Debug
 
-import Return
-import Return exposing (Return)
-
 type Player = A | B 
 type alias PitLocation = Int
 type alias Pit = { player : Player, seeds : Int}
@@ -16,29 +13,7 @@ type alias Model =
   { pits : Array Pit
   , storeA : Int
   , storeB : Int
-  , hand : Maybe Hand
   }
-  
-type alias Hand = 
-  { player : Player 
-  , seeds : Int
-  , loc : PitLocation
-  }
-
-type Msg 
-  = Reset
-  | Play Player PitLocation
-
-updateR : Msg -> Model -> Result String (Return Msg Model)
-updateR msg model =
-  (case msg of
-    Reset ->
-      init
-      |> Ok
-    Play player pitLoc ->
-      model
-      |> dig player pitLoc)
-  |> Result.map Return.singleton
 
 pitsPerPlayer : number
 pitsPerPlayer = 7
@@ -62,7 +37,6 @@ init =
     { pits = makeRow A `Array.append` makeRow B
     , storeA = 0
     , storeB = 0
-    , hand = Nothing
     }
 
 rows : Model -> (List Pit, List Pit)
@@ -120,89 +94,3 @@ capture player loc model =
     c = lookup loc model |> .seeds
   in
     model |> clear loc |> store player c 
-
--- 
-
-withHand : Model -> (Hand -> Result String Model) -> Result String Model
-withHand model f =
-  case model.hand of 
-    Just hand ->
-      f hand
-    Nothing ->
-      Err "no hand"
-
-withoutHand : Model -> (Model -> Result String Model) -> Result String Model
-withoutHand model f =
-  case model.hand of
-    Just _ ->
-      Err "already has a hand"
-    Nothing ->
-      f model
-
-newHand : PitLocation -> Model -> Result String Model
-newHand loc model =
-  withoutHand model <| \model ->
-    let 
-      pit = 
-        lookup loc model
-      hand =
-        { player = pit.player
-        , seeds = 0
-        , loc = loc 
-        }
-    in 
-      case pit.seeds of
-        0 -> 
-          Err "cannot select empty pit"
-        _ ->
-          Ok { model | hand = Just hand }
-
-moveHand : Model -> Result String Model
-moveHand model =
-  withHand model <| \hand ->
-    let 
-      lk loc = 
-        model |> lookup loc |> .seeds
-      loc2 = 
-        next hand.loc
-      loc3 = 
-        next loc2
-    in
-      case (hand.seeds, lk hand.loc, lk loc2) of
-        (0, 0, 0) -> -- No hand, next two pits empty. End turn.
-          { model | hand = Nothing }
-          |> Ok
-        (0, 0, s) -> -- Empty pit. Capture next and move on.
-          model
-          |> clear loc2 
-          |> store hand.player s
-          |> \model -> { model | hand = Just { hand | loc = loc3 }}
-          |> Ok
-        (0, s, _) -> -- Continue digging.
-          model 
-          |> clear hand.loc
-          |> \model -> { model | hand = Just { hand | seeds = s, loc = loc2 }}
-          |> Ok
-        (s, _, _) -> -- Sow 1 seed and continue digging.
-          model 
-          |> inc hand.loc
-          |> \model -> { model | hand = Just { hand | seeds = s - 1, loc = loc2 }}
-          |> Ok
-
-runHand : Model -> Result String Model
-runHand model = 
-  moveHand model 
-  `Result.andThen` (\model -> case model.hand of
-                                Nothing -> Ok model
-                                _       -> runHand model)
-
-locFor : Player -> PitLocation -> PitLocation
-locFor player loc =
-  case player of
-    A -> loc
-    B -> pitsPerPlayer + loc
-
-dig : Player -> PitLocation -> Model -> Result String Model
-dig player loc model =
-  newHand (locFor player loc) model
-  `Result.andThen` runHand

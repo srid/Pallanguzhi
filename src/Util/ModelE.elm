@@ -5,6 +5,7 @@ import Return
 import Return exposing (Return)
 
 type alias ModelE e model = Result (e, model) model
+type alias ModelES model = ModelE String model
 
 init : model -> ModelE e model
 init = Ok
