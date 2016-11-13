@@ -14,7 +14,6 @@ type alias Model =
   , storeA : Int
   , storeB : Int
   , hand : Maybe Hand
-  , error : Maybe String -- XXX: is this right abstraction?
   }
   
 type alias Hand = 
@@ -27,19 +26,14 @@ type Msg
   = Reset
   | Play Player PitLocation
 
-update : Msg -> Model -> (Model, Cmd Msg)
-update msg model =
+updateR : Msg -> Model -> Result String (Model, Cmd Msg)
+updateR msg model =
   case msg of
     Reset ->
-      (initialModel, Cmd.none)
+      Ok (initialModel, Cmd.none)
     Play player pitLoc ->
-      (dig player pitLoc model |> resultToError model, Cmd.none)
-
-resultToError : Model -> Result String Model -> Model 
-resultToError m r =
-  case r of
-    Ok m' -> { m' | error = Nothing }
-    Err e -> { m | error = Just e }
+      dig player pitLoc model
+      |> Result.map (\model -> (model, Cmd.none))
 
 pitsPerPlayer : number
 pitsPerPlayer = 7
@@ -64,7 +58,6 @@ initialModel =
     , storeA = 0
     , storeB = 0
     , hand = Nothing
-    , error = Nothing
     }
 
 rows : Model -> (List Pit, List Pit)

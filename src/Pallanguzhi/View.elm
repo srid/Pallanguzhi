@@ -9,8 +9,8 @@ import Css exposing (hex)
 import Pallanguzhi.Msg as Msg
 import Pallanguzhi.Board as Board
 
-viewBoard : Board.Model -> Html Msg.Msg
-viewBoard board =
+viewBoard : Board.Model -> Maybe String -> Html Msg.Msg
+viewBoard board errorMaybe =
   let
     (pitsA, pitsB) = Board.rows board
   in 
@@ -23,14 +23,16 @@ viewBoard board =
       , hr [] []
       , viewStore board.storeB
       , hr [] []
-      , viewError board.error
+      , viewError errorMaybe
       ]
 
 viewError : Maybe String -> Html a
 viewError errorMaybe =
   case errorMaybe of
-    Nothing -> div [] []
-    Just e  -> div [] [ text <| "Error: " ++ e ]
+    Nothing -> 
+      div [] []
+    Just e -> 
+      div [] [ text <| "Error: " ++ e ]
 
 viewPits : Board.Player -> List Board.Pit -> Html Msg.Msg
 viewPits player =
