@@ -6,28 +6,40 @@ import Svg exposing (..)
 import Svg.Attributes exposing (..)
 import Svg.Events exposing (..)
 
+import Util.Diagram as D
+
 import List
 
 view : (Int -> a) -> Html a
 view f = 
-  svg 
-    [ version "1.1", x "0", y "0", viewBox "0 0 250 100" 
-    ]
-    <| 
-    List.map (viewPit 20 f) [0..5]
-    `List.append`
-    List.map (viewPit 50 f) [0..5]
-
-viewPit : Int -> (Int -> a) -> Int -> Html a
-viewPit y f loc =
   let 
-    start = 20
+    row = 
+      List.repeat 6 (pit f) |> D.hfold 5
+    diagram =
+      D.vfold 5 [row, row]
+      |> D.draw 10 10 
+  in 
+    svg 
+     [ version "1.1", x "0", y "0", viewBox "0 0 250 100" 
+     ] diagram
+    
+pit : (Int -> a) -> D.Diagram a
+pit f =
+  let 
     radius = 12
     color  = "#60B5CC"
-    x = start + loc * (radius * 2 + 5)
   in
-    circle [ cx <| toString x 
-           , cy <| toString y
-           , r  <| toString radius
-           , fill color
-           , onClick (f 3) ] []
+    D.circle [fill color, onClick (f 3)] radius
+
+viewStore : Int -> Int -> Html a
+viewStore y' seeds =
+  let 
+    h = 5
+    w = 100
+    startX = 10
+  in
+    rect [ x <| toString startX
+         , y <| toString <| 20 + y'
+         , width <| toString w
+         , height <| toString h
+         ] []
