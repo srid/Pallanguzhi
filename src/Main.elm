@@ -17,7 +17,7 @@ type alias Model =
   }
 
 init : Return Msg Model
-init = { board = Ok Board.init}
+init = { board = ModelE.init Board.init}
        |> Return.singleton
 
 -- Update

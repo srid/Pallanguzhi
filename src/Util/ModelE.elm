@@ -6,6 +6,9 @@ import Return exposing (Return)
 
 type alias ModelE e model = Result (e, model) model
 
+init : model -> ModelE e model
+init = Ok
+
 getModel : ModelE e model -> model
 getModel r =
   case r of
