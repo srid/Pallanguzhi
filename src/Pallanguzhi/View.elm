@@ -22,7 +22,15 @@ viewBoard board =
       , viewPits Board.B (List.reverse pitsA)
       , hr [] []
       , viewStore board.storeB
+      , hr [] []
+      , viewError board.error
       ]
+
+viewError : Maybe String -> Html a
+viewError errorMaybe =
+  case errorMaybe of
+    Nothing -> div [] []
+    Just e  -> div [] [ text <| "Error: " ++ e ]
 
 viewPits : Board.Player -> List Board.Pit -> Html Msg.Msg
 viewPits player =

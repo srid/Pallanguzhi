@@ -10,15 +10,22 @@ type alias PitLocation = Int
 type alias Pit = { player : Player, seeds : Int}
 
 type alias Model =
-  { pits   : Array Pit
+  { pits : Array Pit
   , storeA : Int
   , storeB : Int
+  , hand : Maybe Hand
+  , error : Maybe String -- XXX: is this right abstraction?
+  }
+  
+type alias Hand = 
+  { player : Player 
+  , seeds : Int
+  , loc : PitLocation
   }
 
 type Msg 
   = Reset
   | Play Player PitLocation
-
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -26,8 +33,13 @@ update msg model =
     Reset ->
       (initialModel, Cmd.none)
     Play player pitLoc ->
-      (digAs player pitLoc model, Cmd.none)
+      (dig pitLoc model |> resultToError model, Cmd.none)
 
+resultToError : Model -> Result String Model -> Model 
+resultToError m r =
+  case r of
+    Ok m' -> { m' | error = Nothing }
+    Err e -> { m | error = Just e }
 
 pitsPerPlayer : number
 pitsPerPlayer = 7
@@ -51,6 +63,8 @@ initialModel =
     { pits = makeRow A `Array.append` makeRow B
     , storeA = 0
     , storeB = 0
+    , hand = Nothing
+    , error = Nothing
     }
 
 rows : Model -> (List Pit, List Pit)
@@ -109,63 +123,72 @@ capture player loc model =
   in
     model |> clear loc |> store player c 
 
-dig : PitLocation -> Model -> Model
+-- 
+
+newHand : PitLocation -> Model -> Result String Model
+newHand loc model =
+  case model.hand of
+    Just _ -> 
+      Err "already has a hand"
+    Nothing ->
+      let 
+        pit = 
+          lookup loc model
+        hand =
+          { player = pit.player
+          , seeds = 0
+          , loc = loc 
+          }
+      in 
+        case pit.seeds of
+          0 -> 
+            Err "cannot select empty pit"
+          _ ->
+            Ok { model | hand = Just hand }
+
+moveHand : Model -> Result String Model
+moveHand model =
+  case model.hand of 
+    Nothing -> 
+      Err "no hand"
+    Just hand ->
+      let 
+        lk loc = 
+          model |> lookup loc |> .seeds
+        loc2 = 
+          next hand.loc
+        loc3 = 
+          next loc2
+      in
+        case (hand.seeds, lk hand.loc, lk loc2) of
+          (0, 0, 0) -> -- No hand, next two pits empty. End turn.
+            { model | hand = Nothing }
+            |> Ok
+          (0, 0, s) -> -- Empty pit. Capture next and move on.
+            model
+            |> clear loc2 
+            |> store hand.player s
+            |> \model -> { model | hand = Just { hand | loc = loc3 }}
+            |> Ok
+          (0, s, _) -> -- Continue digging.
+            model 
+            |> clear hand.loc
+            |> \model -> { model | hand = Just { hand | seeds = s, loc = loc2 }}
+            |> Ok
+          (s, _, _) -> -- Sow 1 seed and continue digging.
+            model 
+            |> inc hand.loc
+            |> \model -> { model | hand = Just { hand | seeds = s - 1, loc = loc2 }}
+            |> Ok
+
+runHand : Model -> Result String Model
+runHand model = 
+  moveHand model 
+  `Result.andThen` (\model -> case model.hand of
+                                Nothing -> Ok model
+                                _       -> runHand model)
+
+dig : PitLocation -> Model -> Result String Model
 dig loc model =
-  let 
-    pit = lookup loc model
-  in
-    digAs pit.player loc model
-
-digAs : Player -> PitLocation -> Model -> Model
-digAs player loc model =
-  let
-    cursor = 
-      { player = player
-      , hand = lookup loc model |> .seeds
-      , loc = loc
-      }
-  in
-    digAsT cursor model
-
-digAsT : ModelCursor -> Model -> Model
-digAsT cursor model =
-  model
-  |> clear cursor.loc
-  |> sowAs { cursor 
-           | loc = next cursor.loc
-           , hand = lookup cursor.loc model |> .seeds 
-           }
-
-sowAs : ModelCursor -> Model -> Model
-sowAs cursor model =
-  model 
-  |> sowAsT cursor model
-
-type alias ModelCursor = 
-  { player : Player 
-  , hand : Int 
-  , loc : PitLocation
-  }
-type alias ModelTransformer = Model -> Model 
-       
-sowAsT : ModelCursor -> Model -> ModelTransformer
-sowAsT cursor model =
-  let 
-    lk loc = 
-      model |> lookup loc |> .seeds
-    loc2 = 
-      next cursor.loc
-    loc3 = 
-      next loc2
-  in
-    case (cursor.hand, lk cursor.loc, lk loc2) of
-      (0, 0, 0) -> -- No hand, next two pits empty. End turn.
-        identity
-      (0, 0, _) -> -- Empty pit. Capture next and move on.
-        capture cursor.player loc2
-        >> digAsT { cursor | loc = loc3 }
-      (0, _, _) -> -- Continue digging.
-        digAsT cursor
-      _ -> -- Sow 1 seed and continue digging.
-        inc cursor.loc
-        >> sowAs { cursor | hand = cursor.hand-1, loc = loc2 }
+  newHand loc model
+  `Result.andThen` runHand
