@@ -31,7 +31,7 @@ update msg model =
       (model, Cmd.none)
     Msg.Board action ->
       let 
-        (model', cmd') = (ModelE.updateE Board.update) action model.board
+        (model', cmd') = (ModelE.update Board.updateR) action model.board
       in
         ({model | board = model'}, Cmd.map Msg.Board cmd')
 
@@ -39,7 +39,7 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-  (ModelE.viewE View.viewBoard) model.board
+  (ModelE.view View.viewBoard) model.board
 
 
 main : Program Never

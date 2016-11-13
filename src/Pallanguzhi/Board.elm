@@ -26,8 +26,8 @@ type Msg
   = Reset
   | Play Player PitLocation
 
-update : Msg -> Model -> Result String (Model, Cmd Msg)
-update msg model =
+updateR : Msg -> Model -> Result String (Model, Cmd Msg)
+updateR msg model =
   case msg of
     Reset ->
       Ok (initialModel, Cmd.none)

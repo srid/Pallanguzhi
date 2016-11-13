@@ -12,8 +12,8 @@ getModel r =
     Err (_, model) ->
       model
 
-updateE : (msg -> model -> Result e (model, Cmd msg)) -> msg -> ModelE e model -> (ModelE e model, Cmd msg)
-updateE update msg modelE =
+update : (msg -> model -> Result e (model, Cmd msg)) -> msg -> ModelE e model -> (ModelE e model, Cmd msg)
+update update msg modelE =
   let 
     model = 
       getModel modelE
@@ -26,8 +26,8 @@ updateE update msg modelE =
       Ok (model, cmd) ->
         (Ok model, cmd)
 
-viewE : (model -> Maybe e -> Html msg) -> ModelE e model -> Html msg 
-viewE view = asMaybe view
+view : (model -> Maybe e -> Html msg) -> ModelE e model -> Html msg 
+view view = asMaybe view
 
 asMaybe : (model -> Maybe e -> a) -> ModelE e model -> a
 asMaybe f v =
