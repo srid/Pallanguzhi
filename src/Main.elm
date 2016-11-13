@@ -5,19 +5,17 @@ import Return exposing (Return)
 
 import Pallanguzhi.Msg exposing (Msg)
 import Pallanguzhi.Msg as Msg
-import Pallanguzhi.View as View
-import Pallanguzhi.Board as Board
+import Pallanguzhi.BoardE as BoardE
 
-import Util.ModelE as ModelE
 
 -- Model
 
 type alias Model =
-  { board : ModelE.ModelE String Board.Model 
+  { board : BoardE.Model
   }
 
 init : Return Msg Model
-init = { board = ModelE.init Board.init}
+init = { board = BoardE.init }
        |> Return.singleton
 
 -- Update
@@ -29,14 +27,14 @@ update msg model =
       Return.singleton model
     Msg.Board action ->
       model.board
-      |> (ModelE.update Board.updateR) action
+      |> BoardE.update action
       |> Return.mapBoth Msg.Board (\b -> {model | board = b})
 
 -- View
 
 view : Model -> Html Msg
 view model =
-  (ModelE.view View.viewBoard) model.board
+  BoardE.view model.board
 
 
 main : Program Never
