@@ -27,9 +27,12 @@ updateE update msg modelE =
         (Ok model, cmd)
 
 viewE : (model -> Maybe e -> Html msg) -> ModelE e model -> Html msg 
-viewE view modelE =
-  case modelE of
-    Ok model ->
-      view model Nothing
-    Err (error, model) ->
-      view model (Just error)
+viewE view = asMaybe view
+
+asMaybe : (model -> Maybe e -> a) -> ModelE e model -> a
+asMaybe f v =
+  case v of 
+    Ok m ->
+      f m Nothing
+    Err (e, m) ->
+      f m (Just e)
