@@ -119,31 +119,53 @@ dig loc model =
 digAs : Player -> PitLocation -> Model -> Model
 digAs player loc model =
   let
-    hand = lookup loc model |> .seeds
+    cursor = 
+      { player = player
+      , hand = lookup loc model |> .seeds
+      , loc = loc
+      }
   in
-    model 
-    |> clear loc 
-    |> sowAs player hand (next loc)
+    digAsT cursor model
 
-sowAs : Player -> Int -> PitLocation -> Model -> Model
-sowAs player hand loc1 model =
+digAsT : ModelCursor -> Model -> Model
+digAsT cursor model =
+  model
+  |> clear cursor.loc
+  |> sowAs { cursor 
+           | loc = next cursor.loc
+           , hand = lookup cursor.loc model |> .seeds 
+           }
+
+sowAs : ModelCursor -> Model -> Model
+sowAs cursor model =
+  model 
+  |> sowAsT cursor model
+
+type alias ModelCursor = 
+  { player : Player 
+  , hand : Int 
+  , loc : PitLocation
+  }
+type alias ModelTransformer = Model -> Model 
+       
+sowAsT : ModelCursor -> Model -> ModelTransformer
+sowAsT cursor model =
   let 
     lk loc = 
       model |> lookup loc |> .seeds
     loc2 = 
-      next loc1
+      next cursor.loc
     loc3 = 
       next loc2
   in
-    model
-    |> case (hand, lk loc1, lk loc2) of
+    case (cursor.hand, lk cursor.loc, lk loc2) of
       (0, 0, 0) -> -- No hand, next two pits empty. End turn.
         identity
       (0, 0, _) -> -- Empty pit. Capture next and move on.
-        capture player loc2
-        >> digAs player loc3
+        capture cursor.player loc2
+        >> digAsT { cursor | loc = loc3 }
       (0, _, _) -> -- Continue digging.
-        digAs player loc1
+        digAsT cursor
       _ -> -- Sow 1 seed and continue digging.
-        inc loc1
-        >> sowAs player (hand-1) loc2
+        inc cursor.loc
+        >> sowAs { cursor | hand = cursor.hand-1, loc = loc2 }
