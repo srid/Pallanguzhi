@@ -33,7 +33,7 @@ update msg model =
     Reset ->
       (initialModel, Cmd.none)
     Play player pitLoc ->
-      (dig pitLoc model |> resultToError model, Cmd.none)
+      (dig player pitLoc model |> resultToError model, Cmd.none)
 
 resultToError : Model -> Result String Model -> Model 
 resultToError m r =
@@ -188,7 +188,13 @@ runHand model =
                                 Nothing -> Ok model
                                 _       -> runHand model)
 
-dig : PitLocation -> Model -> Result String Model
-dig loc model =
-  newHand loc model
+locFor : Player -> PitLocation -> PitLocation
+locFor player loc =
+  case player of
+    A -> loc
+    B -> pitsPerPlayer + loc
+
+dig : Player -> PitLocation -> Model -> Result String Model
+dig player loc model =
+  newHand (locFor player loc) model
   `Result.andThen` runHand
