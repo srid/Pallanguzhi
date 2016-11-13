@@ -1,7 +1,7 @@
 module Pallanguzhi.Msg exposing (..)
 
-import Pallanguzhi.Board as Board
+import Pallanguzhi.Board.Model as BoardModel
 
 type Msg 
   = NoOp
-  | Board Board.Msg
+  | Board BoardModel.Msg

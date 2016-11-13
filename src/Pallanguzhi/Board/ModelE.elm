@@ -1,4 +1,4 @@
-module Pallanguzhi.BoardE exposing (..)
+module Pallanguzhi.Board.ModelE exposing (..)
 
 import Html exposing (Html)
 import Return
@@ -6,8 +6,8 @@ import Return
 import Util.ModelE as ModelE
 import Util.ModelE exposing (ModelE)
 
-import Pallanguzhi.Board as Board
-import Pallanguzhi.View as View
+import Pallanguzhi.Board.Model as Board
+import Pallanguzhi.Board.View as View
 import Pallanguzhi.Msg exposing (Msg)
 
 type alias Model = ModelE String Board.Model
