@@ -125,61 +125,71 @@ capture player loc model =
 
 -- 
 
-newHand : PitLocation -> Model -> Result String Model
-newHand loc model =
+withHand : Model -> (Hand -> Result String Model) -> Result String Model
+withHand model f =
+  case model.hand of 
+    Just hand ->
+      f hand
+    Nothing ->
+      Err "no hand"
+
+withoutHand : Model -> (Model -> Result String Model) -> Result String Model
+withoutHand model f =
   case model.hand of
-    Just _ -> 
+    Just _ ->
       Err "already has a hand"
     Nothing ->
-      let 
-        pit = 
-          lookup loc model
-        hand =
-          { player = pit.player
-          , seeds = 0
-          , loc = loc 
-          }
-      in 
-        case pit.seeds of
-          0 -> 
-            Err "cannot select empty pit"
-          _ ->
-            Ok { model | hand = Just hand }
+      f model
+
+newHand : PitLocation -> Model -> Result String Model
+newHand loc model =
+  withoutHand model <| \model ->
+    let 
+      pit = 
+        lookup loc model
+      hand =
+        { player = pit.player
+        , seeds = 0
+        , loc = loc 
+        }
+    in 
+      case pit.seeds of
+        0 -> 
+          Err "cannot select empty pit"
+        _ ->
+          Ok { model | hand = Just hand }
 
 moveHand : Model -> Result String Model
 moveHand model =
-  case model.hand of 
-    Nothing -> 
-      Err "no hand"
-    Just hand ->
-      let 
-        lk loc = 
-          model |> lookup loc |> .seeds
-        loc2 = 
-          next hand.loc
-        loc3 = 
-          next loc2
-      in
-        case (hand.seeds, lk hand.loc, lk loc2) of
-          (0, 0, 0) -> -- No hand, next two pits empty. End turn.
-            { model | hand = Nothing }
-            |> Ok
-          (0, 0, s) -> -- Empty pit. Capture next and move on.
-            model
-            |> clear loc2 
-            |> store hand.player s
-            |> \model -> { model | hand = Just { hand | loc = loc3 }}
-            |> Ok
-          (0, s, _) -> -- Continue digging.
-            model 
-            |> clear hand.loc
-            |> \model -> { model | hand = Just { hand | seeds = s, loc = loc2 }}
-            |> Ok
-          (s, _, _) -> -- Sow 1 seed and continue digging.
-            model 
-            |> inc hand.loc
-            |> \model -> { model | hand = Just { hand | seeds = s - 1, loc = loc2 }}
-            |> Ok
+  withHand model <| \hand ->
+    let 
+      lk loc = 
+        model |> lookup loc |> .seeds
+      loc2 = 
+        next hand.loc
+      loc3 = 
+        next loc2
+    in
+      case (hand.seeds, lk hand.loc, lk loc2) of
+        (0, 0, 0) -> -- No hand, next two pits empty. End turn.
+          { model | hand = Nothing }
+          |> Ok
+        (0, 0, s) -> -- Empty pit. Capture next and move on.
+          model
+          |> clear loc2 
+          |> store hand.player s
+          |> \model -> { model | hand = Just { hand | loc = loc3 }}
+          |> Ok
+        (0, s, _) -> -- Continue digging.
+          model 
+          |> clear hand.loc
+          |> \model -> { model | hand = Just { hand | seeds = s, loc = loc2 }}
+          |> Ok
+        (s, _, _) -> -- Sow 1 seed and continue digging.
+          model 
+          |> inc hand.loc
+          |> \model -> { model | hand = Just { hand | seeds = s - 1, loc = loc2 }}
+          |> Ok
 
 runHand : Model -> Result String Model
 runHand model = 
