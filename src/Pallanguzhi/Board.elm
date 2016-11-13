@@ -5,7 +5,9 @@ import Array exposing (Array)
 import Maybe
 import Debug
 
+type Player = A | B 
 type alias PitLocation = Int
+type alias Pit = { player : Player, seeds : Int}
 
 type alias Model =
   { pits   : Array Pit
@@ -17,6 +19,7 @@ type Msg
   = Reset
   | Play Player PitLocation
 
+
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
@@ -25,8 +28,6 @@ update msg model =
     Play player pitLoc ->
       (digAs player pitLoc model, Cmd.none)
 
-type Player = A | B 
-type alias Pit = { player : Player, seeds : Int}
 
 pitsPerPlayer : number
 pitsPerPlayer = 7
@@ -37,13 +38,18 @@ seedsPerPit = 12
 initialModel : Model
 initialModel = 
   let 
-    makeRow player = Array.repeat pitsPerPlayer {player = player, seeds = seedsPerPit}
+    s = 
+      seedsPerPit
+    row = 
+      [s, s, s, 2, s, s, s]
+    makeRow player = 
+      List.map (\seeds -> {player = player, seeds = seeds}) row
+      |> Array.fromList
   in
     { pits = makeRow A `Array.append` makeRow B
     , storeA = 0
     , storeB = 0
     }
-    |> dig 0
 
 rows : Model -> (List Pit, List Pit)
 rows model = 
@@ -54,37 +60,37 @@ rows model =
     , f List.drop model.pits
     )
 
-lookup : Int -> Model -> Pit
-lookup idx model = 
-  case Array.get idx model.pits of
+lookup : PitLocation -> Model -> Pit
+lookup loc model = 
+  case Array.get loc model.pits of
     Just pit -> 
       pit
     Nothing  -> 
       -- Invalid index is only possible due to programmer error.
-      Debug.crash <| "error: invalid index: " ++ (toString idx)
+      Debug.crash <| "error: invalid index: " ++ (toString loc)
 
-next : Int -> Int
-next idx
+next : PitLocation -> PitLocation
+next loc
   = let 
       total = 2 * pitsPerPlayer 
     in 
-      (idx + 1) % total
+      (loc + 1) % total
 
-updateSeeds : Int -> (Int -> Int) -> Model -> Model
-updateSeeds idx f model =
+updateSeeds : PitLocation -> (Int -> Int) -> Model -> Model
+updateSeeds loc f model =
   let 
-    pit = lookup idx model
-    pits = Array.set idx { pit | seeds = f pit.seeds } model.pits
+    pit = lookup loc model
+    pits = Array.set loc { pit | seeds = f pit.seeds } model.pits
   in
     { model | pits = pits }
 
-inc : Int -> Model -> Model
-inc idx model =
-  updateSeeds idx (\s -> s + 1)  model
+inc : PitLocation -> Model -> Model
+inc loc model =
+  updateSeeds loc (\s -> s + 1)  model
 
-clear : Int -> Model -> Model
-clear idx model =
-  updateSeeds idx (always 0) model
+clear : PitLocation -> Model -> Model
+clear loc model =
+  updateSeeds loc (always 0) model
 
 store : Player -> Int -> Model -> Model
 store player seeds model =
@@ -92,45 +98,45 @@ store player seeds model =
     A -> { model | storeA = model.storeA + seeds }
     B -> { model | storeB = model.storeB + seeds }
 
-capture : Player -> Int -> Model -> Model
-capture player idx model = 
+capture : Player -> PitLocation -> Model -> Model
+capture player loc model = 
   let 
-    c = lookup idx model |> .seeds
+    c = lookup loc model |> .seeds
   in
-    model |> clear idx |> store player c 
+    model |> clear loc |> store player c 
 
-dig : Int -> Model -> Model
-dig idx model =
+dig : PitLocation -> Model -> Model
+dig loc model =
   let 
-    pit = lookup idx model
+    pit = lookup loc model
   in
-    digAs pit.player idx model
+    digAs pit.player loc model
 
-digAs : Player -> Int -> Model -> Model
-digAs player idx model =
+digAs : Player -> PitLocation -> Model -> Model
+digAs player loc model =
   let
-    hand = lookup idx model |> .seeds
+    hand = lookup loc model |> .seeds
   in
     model 
-    |> clear idx 
-    |> sowAs player hand (next idx)
+    |> clear loc 
+    |> sowAs player hand (next loc)
 
-sowAs : Player -> Int -> Int -> Model -> Model
-sowAs player hand idx model =
+sowAs : Player -> Int -> PitLocation -> Model -> Model
+sowAs player hand loc model =
   let 
-    lk idx = model |> lookup idx |> .seeds
-    idxN   = next idx
-    idxNN  = next idxN
+    lk loc = model |> lookup loc |> .seeds
+    locN   = next loc
+    locNN  = next locN
   in
     model
-    |> case (hand, lk idx, lk idxN) of
+    |> case (hand, lk loc, lk locN) of
       (0, 0, 0) -> -- No hand, next two pits empty. End turn.
         identity
       (0, 0, _) -> -- Empty pit. Capture next and move on.
-        capture player idxN
-        >> digAs player idxNN
+        capture player locN
+        >> digAs player locNN
       (0, _, _) -> -- Continue digging.
-        digAs player idx
+        digAs player loc
       _ -> -- Sow 1 seed and continue digging.
-        inc idx
-        >> sowAs player (hand-1) idxN
+        inc loc
+        >> sowAs player (hand-1) locN
