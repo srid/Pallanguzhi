@@ -29,7 +29,7 @@ viewC f board =
       , hr [] []
       , viewStore board.storeB
       , hr [] []
-      , SvgView.view
+      , SvgView.view (f Model.A)
       ]
 
 viewPits : PitClickF a -> Model.Player -> List Model.Pit -> Html a
