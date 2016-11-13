@@ -41,10 +41,12 @@ initialModel =
     s = 
       seedsPerPit
     row = 
-      [s, s, s, 2, s, s, s]
+      [s, s, s, 2, s, s, s] |> Array.fromList
+    makePit player seeds =
+      {player = player, seeds = seeds}
     makeRow player = 
-      List.map (\seeds -> {player = player, seeds = seeds}) row
-      |> Array.fromList
+      row
+      |> Array.map (makePit player) 
   in
     { pits = makeRow A `Array.append` makeRow B
     , storeA = 0
@@ -70,17 +72,19 @@ lookup loc model =
       Debug.crash <| "error: invalid index: " ++ (toString loc)
 
 next : PitLocation -> PitLocation
-next loc
-  = let 
-      total = 2 * pitsPerPlayer 
-    in 
-      (loc + 1) % total
+next loc =
+  let 
+    total = 2 * pitsPerPlayer 
+  in 
+    (loc + 1) % total
 
 updateSeeds : PitLocation -> (Int -> Int) -> Model -> Model
 updateSeeds loc f model =
   let 
-    pit = lookup loc model
-    pits = Array.set loc { pit | seeds = f pit.seeds } model.pits
+    pit = 
+      lookup loc model
+    pits = 
+      Array.set loc { pit | seeds = f pit.seeds } model.pits
   in
     { model | pits = pits }
 
@@ -122,21 +126,24 @@ digAs player loc model =
     |> sowAs player hand (next loc)
 
 sowAs : Player -> Int -> PitLocation -> Model -> Model
-sowAs player hand loc model =
+sowAs player hand loc1 model =
   let 
-    lk loc = model |> lookup loc |> .seeds
-    locN   = next loc
-    locNN  = next locN
+    lk loc = 
+      model |> lookup loc |> .seeds
+    loc2 = 
+      next loc1
+    loc3 = 
+      next loc2
   in
     model
-    |> case (hand, lk loc, lk locN) of
+    |> case (hand, lk loc1, lk loc2) of
       (0, 0, 0) -> -- No hand, next two pits empty. End turn.
         identity
       (0, 0, _) -> -- Empty pit. Capture next and move on.
-        capture player locN
-        >> digAs player locNN
+        capture player loc2
+        >> digAs player loc3
       (0, _, _) -> -- Continue digging.
-        digAs player loc
+        digAs player loc1
       _ -> -- Sow 1 seed and continue digging.
-        inc loc
-        >> sowAs player (hand-1) locN
+        inc loc1
+        >> sowAs player (hand-1) loc2
