@@ -6,6 +6,8 @@ import Svg.Attributes as S
 import Svg.Attributes exposing (..)
 
 -- Diagram is a monoid, with empty and append.
+-- It uses a bounding box (Int Int) which is not ideal (see moveX below)
+-- but gets the job done.
 type Diagram a = Diagram Int Int (Int -> Int -> List (Svg a))
 
 empty : Diagram a
@@ -79,7 +81,7 @@ hfold space = List.foldl happend empty << List.intersperse (hspace space)
 vfold : Int -> List (Diagram a) -> Diagram a
 vfold space = List.foldl vappend empty << List.intersperse (vspace space)
 
--- XXX: This transformation should effect a change in width or height of 
+-- XXX: This transformation should effect a change in the bounding boxes of 
 -- the parent diagrams (created via append/fold), but it doesdn't. Use these
 -- functions sparingly.
 moveX : Int -> Diagram a -> Diagram a

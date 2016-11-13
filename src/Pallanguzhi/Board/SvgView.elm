@@ -12,18 +12,21 @@ import List
 
 view : (Int -> a) -> Html a
 view f = 
+  svg 
+    [ S.version "1.1", S.x "0", S.y "0", S.viewBox "0 0 250 100" 
+    ] (board f |> D.draw 10 10)
+
+board : (Int -> a) -> D.Diagram a
+board f =
   let 
     row = 
-      List.repeat 6 (pit f) |> D.hfold 5
+      pit f
+      |> List.repeat 7
+      |> D.hfold 5
     store' =
       store (D.width row) 42
-    diagram =
-      D.vfold 5 [store', row, row, store']
-      |> D.draw 10 10 
   in 
-    svg 
-     [ S.version "1.1", S.x "0", S.y "0", S.viewBox "0 0 250 100" 
-     ] diagram
+    D.vfold 5 [store', row, row, store']
     
 pit : (Int -> a) -> D.Diagram a
 pit f =
