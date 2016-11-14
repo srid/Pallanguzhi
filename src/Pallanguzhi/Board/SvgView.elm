@@ -20,16 +20,18 @@ board : (Int -> a) -> D.Diagram a
 board f =
   let 
     row = 
-      pit f
+      pit f 42
       |> List.repeat 7
       |> D.hfold 5
-    store' =
+    store' n =
       store (D.width row) 42
+      `D.stack`
+      (D.text [] (toString n) |> D.move 3 11)
   in 
-    D.vfold 5 [store', row, row, store']
+    D.vfold 5 [store' 12, row, row, store' 143]
     
-pit : (Int -> a) -> D.Diagram a
-pit f =
+pit : (Int -> a) -> Int -> D.Diagram a
+pit f c =
   let 
     radius = 
       12
@@ -47,7 +49,7 @@ pit f =
   in
     D.circle [S.fill color, onClick (f 3)] radius
     `D.stack`
-    seeds
+    (D.text [] (toString c) |> D.move 3 16)  -- FIXME: make fixed size
 
 store : Int -> Int -> D.Diagram a
 store w seeds =

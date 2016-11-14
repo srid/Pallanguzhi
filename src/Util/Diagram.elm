@@ -34,10 +34,20 @@ width (Diagram w _ _) = w
 height : Diagram a -> Int
 height (Diagram _ h _) = h
 
+text : List (Svg.Attribute a) -> String -> Diagram a
+text attrs s = 
+  -- XXX: text bounding box varies on font and text length!
+  Diagram 1 1 (\x y ->
+    Svg.text' (attrs ++ 
+               [ S.x <| toString x
+               , S.y <| toString y]) [Svg.text s]
+    |> singleton)
+
 circle : List (Svg.Attribute a) -> Int -> Diagram a
 circle attrs r' =
   Diagram (r'*2) (r'*2) (\x y ->
-    Svg.circle (attrs ++ [ S.cx <| toString (x + r') 
+    Svg.circle (attrs ++ 
+                [ S.cx <| toString (x + r') 
                 , S.cy <| toString (y + r')
                 , S.r  <| toString r'
                 ]) []
