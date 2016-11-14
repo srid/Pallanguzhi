@@ -6,6 +6,8 @@ import Svg.Attributes as S
 
 type alias DrawF a = Int -> Int -> List (Svg a)
 
+-- XXX: This way of invoking draw means we cannot resize diagrams. We could 
+-- adapt the design but it might come at the cost of radius possibly being a float.
 appendDrawF : DrawF a -> DrawF a -> DrawF a
 appendDrawF f g x y =
   f x y `List.append` g x y
@@ -34,45 +36,34 @@ height (Diagram _ h _) = h
 
 circle : List (Svg.Attribute a) -> Int -> Diagram a
 circle attrs r' =
-  let
-    draw r' x y = 
-      Svg.circle (attrs ++ [ S.cx <| toString (x + r') 
-                 , S.cy <| toString (y + r')
-                 , S.r  <| toString r'
-                 ]) []
-      |> singleton
- in
-    -- XXX: This way of invoking draw means we cannot resize diagrams. We could 
-    -- adapt the design but it might come at the cost of radius possibly being a float.
-    Diagram (r'*2) (r'*2) (draw r')
+  Diagram (r'*2) (r'*2) (\x y ->
+    Svg.circle (attrs ++ [ S.cx <| toString (x + r') 
+                , S.cy <| toString (y + r')
+                , S.r  <| toString r'
+                ]) []
+    |> singleton)
+
 
 rect : List (Svg.Attribute a) -> Int -> Int -> Diagram a
 rect attrs w h =
-  let 
-    draw w h x y =
-      Svg.rect (attrs ++ 
-               [ S.x <| toString x
-               , S.y <| toString y
-               , S.width <| toString w
-               , S.height <| toString h
-               ]) [] 
-      |> singleton
-  in 
-    Diagram w h (draw w h)
+  Diagram w h (\x y ->
+    Svg.rect (attrs ++ 
+              [ S.x <| toString x
+              , S.y <| toString y
+              , S.width <| toString w
+              , S.height <| toString h
+              ]) [] 
+    |> singleton)
 
 happend : Diagram a -> Diagram a -> Diagram a
 happend (Diagram w1 h1 f1) (Diagram w2 h2 f2) = 
-  let 
-    draw x y = f1 x y `List.append` f2 (x + w1) y
-  in 
-    Diagram (w1+w2) (max h1 h2) draw
+  Diagram (w1+w2) (max h1 h2) (\x y -> 
+    f1 x y `List.append` f2 (x + w1) y )
 
 vappend : Diagram a -> Diagram a -> Diagram a
 vappend (Diagram w1 h1 f1) (Diagram w2 h2 f2) = 
-  let 
-    draw x y = f1 x y `List.append` f2 x (y + h1)
-  in 
-    Diagram (max w1 w2) (h1+h2) draw
+  Diagram (max w1 w2) (h1+h2) (\x y -> 
+    f1 x y `List.append` f2 x (y + h1))
 
 hspace : Int -> Diagram a
 hspace w' = empty |> \(Diagram w h f) -> Diagram (w+w') h f
