@@ -31,10 +31,23 @@ board f =
 pit : (Int -> a) -> D.Diagram a
 pit f =
   let 
-    radius = 12
-    color  = "#60B5CC"
+    radius = 
+      12
+    color = 
+      "#60B5CC"
+    seed dx dy = 
+      D.circle [] 2 |> D.move (5 + dx) (7 + dy)
+    seeds =
+      -- XXX: one pit can have *more than* 6 seeds
+      -- Perhaps make this generic for N number of seeds, with N displayed in a corner.
+      let 
+        row = (D.hfold 1 <| List.repeat 3 <| seed 0 0)
+      in
+        D.vfold 2 [row, row]
   in
     D.circle [S.fill color, onClick (f 3)] radius
+    `D.stack`
+    seeds
 
 store : Int -> Int -> D.Diagram a
 store w seeds =

@@ -3,12 +3,17 @@ module Util.Diagram exposing (..)
 import Svg
 import Svg exposing (Svg)
 import Svg.Attributes as S
-import Svg.Attributes exposing (..)
+
+type alias DrawF a = Int -> Int -> List (Svg a)
+
+appendDrawF : DrawF a -> DrawF a -> DrawF a
+appendDrawF f g x y =
+  f x y `List.append` g x y
 
 -- Diagram is a monoid, with empty and append.
 -- It uses a bounding box (Int Int) which is not ideal (see moveX below)
 -- but gets the job done.
-type Diagram a = Diagram Int Int (Int -> Int -> List (Svg a))
+type Diagram a = Diagram Int Int (DrawF a)
 
 empty : Diagram a
 empty =
@@ -31,9 +36,9 @@ circle : List (Svg.Attribute a) -> Int -> Diagram a
 circle attrs r' =
   let
     draw r' x y = 
-      Svg.circle (attrs ++ [ cx <| toString (x + r') 
-                 , cy <| toString (y + r')
-                 , r  <| toString r'
+      Svg.circle (attrs ++ [ S.cx <| toString (x + r') 
+                 , S.cy <| toString (y + r')
+                 , S.r  <| toString r'
                  ]) []
       |> singleton
  in
@@ -60,14 +65,14 @@ happend (Diagram w1 h1 f1) (Diagram w2 h2 f2) =
   let 
     draw x y = f1 x y `List.append` f2 (x + w1) y
   in 
-    Diagram (w1+w2) (Basics.max h1 h2) draw
+    Diagram (w1+w2) (max h1 h2) draw
 
 vappend : Diagram a -> Diagram a -> Diagram a
 vappend (Diagram w1 h1 f1) (Diagram w2 h2 f2) = 
   let 
     draw x y = f1 x y `List.append` f2 x (y + h1)
   in 
-    Diagram (Basics.max w1 w2) (h1+h2) draw
+    Diagram (max w1 w2) (h1+h2) draw
 
 hspace : Int -> Diagram a
 hspace w' = empty |> \(Diagram w h f) -> Diagram (w+w') h f
@@ -81,6 +86,10 @@ hfold space = List.foldl happend empty << List.intersperse (hspace space)
 vfold : Int -> List (Diagram a) -> Diagram a
 vfold space = List.foldl vappend empty << List.intersperse (vspace space)
 
+stack : Diagram a -> Diagram a -> Diagram a
+stack (Diagram w1 h1 f1) (Diagram w2 h2 f2) =
+  Diagram (max w1 w2) (max h1 h2) <| f1 `appendDrawF` f2
+
 -- XXX: This transformation should effect a change in the bounding boxes of 
 -- the parent diagrams (created via append/fold), but it doesdn't. Use these
 -- functions sparingly.
@@ -91,6 +100,10 @@ moveX dx (Diagram w h f) =
 moveY : Int -> Diagram a -> Diagram a
 moveY dy (Diagram w h f) =
   Diagram w h (\x y -> f x (y+dy))
+
+move : Int -> Int -> Diagram a -> Diagram a
+move dx dy (Diagram w h f) =
+  Diagram w h (\x y -> f (x+dx) (y+dy))
 
 singleton : a -> List a
 singleton x = [x]
