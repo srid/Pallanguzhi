@@ -10,7 +10,7 @@ type alias DrawF a = Int -> Int -> List (Svg a)
 -- adapt the design but it might come at the cost of radius possibly being a float.
 appendDrawF : DrawF a -> DrawF a -> DrawF a
 appendDrawF f g x y =
-  f x y `List.append` g x y
+  List.append (f x y) (g x y)
 
 -- Diagram is a monoid, with empty and append.
 -- It uses a bounding box (Int Int) which is not ideal (see moveX below)
@@ -25,8 +25,8 @@ append : Diagram a -> Diagram a -> Diagram a
 append = happend
 
 draw : Int -> Int -> Diagram a -> List (Svg a)
-draw x y (Diagram _ _ draw') =
-  draw' x y
+draw x y (Diagram _ _ drawF) =
+  drawF x y
 
 width : Diagram a -> Int
 width (Diagram w _ _) = w
@@ -38,18 +38,18 @@ text : List (Svg.Attribute a) -> String -> Diagram a
 text attrs s = 
   -- XXX: text bounding box varies on font and text length!
   Diagram 1 1 (\x y ->
-    Svg.text' (attrs ++ 
+    Svg.text_ (attrs ++ 
                [ S.x <| toString x
                , S.y <| toString y]) [Svg.text s]
     |> singleton)
 
 circle : List (Svg.Attribute a) -> Int -> Diagram a
-circle attrs r' =
-  Diagram (r'*2) (r'*2) (\x y ->
+circle attrs r =
+  Diagram (r*2) (r*2) (\x y ->
     Svg.circle (attrs ++ 
-                [ S.cx <| toString (x + r') 
-                , S.cy <| toString (y + r')
-                , S.r  <| toString r'
+                [ S.cx <| toString (x + r) 
+                , S.cy <| toString (y + r)
+                , S.r  <| toString r
                 ]) []
     |> singleton)
 
@@ -68,18 +68,18 @@ rect attrs w h =
 happend : Diagram a -> Diagram a -> Diagram a
 happend (Diagram w1 h1 f1) (Diagram w2 h2 f2) = 
   Diagram (w1+w2) (max h1 h2) (\x y -> 
-    f1 x y `List.append` f2 (x + w1) y )
+    List.append (f1 x y) (f2 (x + w1) y))
 
 vappend : Diagram a -> Diagram a -> Diagram a
 vappend (Diagram w1 h1 f1) (Diagram w2 h2 f2) = 
   Diagram (max w1 w2) (h1+h2) (\x y -> 
-    f1 x y `List.append` f2 x (y + h1))
+    List.append (f1 x y) (f2 x (y + h1)))
 
 hspace : Int -> Diagram a
-hspace w' = empty |> \(Diagram w h f) -> Diagram (w+w') h f
+hspace w_ = empty |> \(Diagram w h f) -> Diagram (w+w_) h f
 
 vspace : Int -> Diagram a
-vspace h' = empty |> \(Diagram w h f) -> Diagram w (h+h') f
+vspace h_ = empty |> \(Diagram w h f) -> Diagram w (h+h_) f
 
 hfold : Int -> List (Diagram a) -> Diagram a
 hfold space = List.foldl happend empty << List.intersperse (hspace space)
@@ -89,7 +89,7 @@ vfold space = List.foldl vappend empty << List.intersperse (vspace space)
 
 stack : Diagram a -> Diagram a -> Diagram a
 stack (Diagram w1 h1 f1) (Diagram w2 h2 f2) =
-  Diagram (max w1 w2) (max h1 h2) <| f1 `appendDrawF` f2
+  Diagram (max w1 w2) (max h1 h2) <| appendDrawF f1 f2
 
 -- XXX: This transformation should effect a change in the bounding boxes of 
 -- the parent diagrams (created via append/fold), but it doesdn't. Use these

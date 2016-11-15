@@ -113,9 +113,10 @@ moveHand model =
 runHand : Model -> Result String Model
 runHand model = 
   moveHand model 
-  `Result.andThen` (\model -> case model.hand of
-                                Nothing -> Ok model
-                                _       -> runHand model)
+  |> Result.andThen (\model -> 
+        case model.hand of
+          Nothing -> Ok model
+          _       -> runHand model)
 
 locFor : Board.Player -> Board.PitLocation -> Board.PitLocation
 locFor player loc =
@@ -126,4 +127,4 @@ locFor player loc =
 dig : Board.Player -> Board.PitLocation -> Model -> Result String Model
 dig player loc model =
   newHand (locFor player loc) model
-  `Result.andThen` runHand
+  |> Result.andThen runHand

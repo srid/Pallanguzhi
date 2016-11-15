@@ -27,12 +27,14 @@ board f =
       pit f 42
       |> List.repeat 7
       |> D.hfold 5
-    store' n =
-      store (D.width row) 42
-      `D.stack`
-      (D.text [] (toString n) |> D.move 3 11)
+    makeStore n =
+      let 
+        g = store (D.width row) 42
+        t = (D.text [] (toString n) |> D.move 3 11)
+      in 
+        D.stack g t
   in 
-    D.vfold 5 [store' 12, row, row, store' 143]
+    D.vfold 5 [makeStore 12, row, row, makeStore 143]
     
 pit : (Int -> a) -> Int -> D.Diagram a
 pit f c =
@@ -50,10 +52,12 @@ pit f c =
         row = (D.hfold 1 <| List.repeat 3 <| seed 0 0)
       in
         D.vfold 2 [row, row]
+    circle = 
+      D.circle [S.fill color, onClick (f 3)] radius
+    text =
+      (D.text [] (toString c) |> D.move 3 16)  -- FIXME: make fixed size
   in
-    D.circle [S.fill color, onClick (f 3)] radius
-    `D.stack`
-    (D.text [] (toString c) |> D.move 3 16)  -- FIXME: make fixed size
+    D.stack circle text
 
 store : Int -> Int -> D.Diagram a
 store w seeds =
