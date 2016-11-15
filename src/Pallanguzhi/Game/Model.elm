@@ -8,17 +8,12 @@ import Return exposing (Return)
 import Util.ElmExtra as E
 import Pallanguzhi.Board.Model as Board
 
-type State
-  = Awaiting Board.Player
-  | Seeding Hand
+type Model
+  = Awaiting Board.Player Board.Model
+  | Seeding Hand Board.Model
   -- TODO: next rounds of game with rubbish holes respected
-  | EndGame
+  | EndGame Board.Model
 
-type alias Model =
-  { board : Board.Model
-  , state : State
-  }
-  
 type alias Hand = 
   { player : Board.Player 
   , seeds : Int
@@ -33,25 +28,27 @@ type Msg
 type alias Error = String
 
 init : Model
-init = { board = Board.init
-       , state = Awaiting Board.A
-       }
+init = Awaiting Board.A Board.init 
+
+getBoard : Model -> Board.Model
+getBoard model =
+  case model of 
+    Awaiting _ board -> board
+    Seeding _ board -> board
+    EndGame board -> board
 
 transition : Msg -> Model -> Result Error Model
 transition msg model = 
-  case (msg, model.state) of
+  case (msg, model) of
     (Reset, _) ->
       Ok init
-    (Play player loc, Awaiting player_) ->
+    (Play player loc, Awaiting player_ board) ->
       if player == player_ then
-        model
-        |> newHand (Board.locFor player loc) 
+        newHand (Board.locFor player loc) board
       else
         Err "Wrong player"
-    (Continue, Seeding hand) ->
-      model
-      |> moveHand hand
-      |> Ok
+    (Continue, Seeding hand board) ->
+      Ok <| moveHand hand board
     (_, _) ->
       Err "Bad game transition"
 
@@ -63,18 +60,18 @@ updateR msg model =
                             
 returnNext : Model -> Return Msg Model
 returnNext model =
-  case model.state of
-    Seeding _ -> 
+  case model of
+    Seeding _ _ -> 
       E.sendAfter (Time.millisecond * 10) Continue
       |> Return.return model
     _ ->
       Return.singleton model
 
-newHand : Board.PitLocation -> Model -> Result String Model
-newHand loc model =
+newHand : Board.PitLocation -> Board.Model -> Result String Model
+newHand loc board =
   let 
     pit = 
-      Board.lookup loc model.board
+      Board.lookup loc board
     hand =
       { player = pit.player
       , seeds = 0
@@ -85,7 +82,7 @@ newHand loc model =
       0 -> 
         Err "Nothing to lift from empty pit"
       _ ->
-        Ok { model | state = Seeding hand }
+        Ok <| Seeding hand board
 
 capture : (Hand, Board.Model) -> (Hand, Board.Model)
 capture (hand, board) =
@@ -120,42 +117,42 @@ advance (hand, board) =
   in
     (newHand, board)
 
-moveHand : Hand -> Model -> Model
-moveHand hand model =
+moveHand : Hand -> Board.Model -> Model
+moveHand hand board =
   let 
     seedsBelow =
-      Board.lookupSeeds hand.loc model.board
+      Board.lookupSeeds hand.loc board
     seedsNext =
-      Board.lookupSeeds (Board.next hand.loc) model.board
+      Board.lookupSeeds (Board.next hand.loc) board
     keepSeeding (hand, board) =
-      { model | board = board, state = Seeding hand }
+      Seeding hand board
     awaitForOtherPlayer (hand, board) =
-      { model | state = Awaiting <| Board.otherPlayer hand.player }
+      Awaiting (Board.otherPlayer hand.player) board
   in
     case (hand.seeds, seedsBelow, seedsNext) of
       (0, 0, 0) -> -- No hand, next two pits empty. End turn.
         -- TODO: determine EndGame
-        (hand, model.board)
+        (hand, board)
         |> awaitForOtherPlayer
       (0, 0, s) -> -- Empty pit. Capture next and move on.
-        (hand, model.board)
+        (hand, board)
         |> advance 
         |> capture
         |> advance 
         |> keepSeeding
       (0, s, _) -> -- Continue digging.
-        (hand, model.board)
+        (hand, board)
         |> lift
         |> advance
         |> keepSeeding
       (s, 5, _) -> -- Pasu; capture!
-        (hand, model.board)
+        (hand, board)
         |> sow  -- Sow 1 before capturing the 6 seeds
         |> capture
         |> advance
         |> keepSeeding
       (s, _, _) -> -- Sow 1 seed and continue digging.
-        (hand, model.board)
+        (hand, board)
         |> sow
         |> advance
         |> keepSeeding

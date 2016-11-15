@@ -14,22 +14,22 @@ view : Model.Model -> Maybe String -> Html Model.Msg
 view model errorMaybe =
   let
     boardHtml = 
-      BoardView.viewC Model.Play model.board 
+      BoardView.viewC Model.Play (Model.getBoard model)
     stateHtml = 
-      viewState model.state
+      viewState model
     errorHtml = 
       viewError errorMaybe
   in
   div [] [boardHtml, stateHtml, errorHtml]
 
-viewState : Model.State -> Html Model.Msg 
+viewState : Model.Model -> Html Model.Msg 
 viewState state =
   case state of
-    Model.Awaiting player ->
+    Model.Awaiting player _ ->
       div [] [ text <| "Awaiting turn by player: " ++ toString player ]
-    Model.Seeding hand ->
+    Model.Seeding hand _ ->
       viewHand hand
-    Model.EndGame ->
+    Model.EndGame _ ->
       div [] [ text <| "Game ended" ]
 
 viewHand : Model.Hand -> Html Model.Msg
