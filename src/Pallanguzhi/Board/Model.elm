@@ -34,7 +34,7 @@ init =
       row
       |> Array.map (makePit player) 
   in
-    { pits = makeRow A `Array.append` makeRow B
+    { pits = Array.append (makeRow A) (makeRow B)
     , storeA = 0
     , storeB = 0
     }
