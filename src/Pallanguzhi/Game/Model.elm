@@ -101,6 +101,15 @@ moveHand model =
                                , hand = Just { hand | seeds = s
                                                     , loc = loc2 }}
           |> Ok
+        (s, 6, _) -> -- Pasu; capture!
+          model
+          |> .board
+          |> Board.clear hand.loc
+          |> Board.store hand.player 6
+          |> \board -> { model | board = board
+                               , hand = Just { hand | seeds = 0
+                                                    , loc = loc2 }}
+          |> Ok
         (s, _, _) -> -- Sow 1 seed and continue digging.
           model 
           |> .board
