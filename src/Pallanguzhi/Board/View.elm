@@ -32,48 +32,30 @@ viewBoard : PitClickF a -> Model ->  D.Diagram a
 viewBoard f board =
   let 
     (rowA, rowB) =
-      let 
-        (a, b) = Model.rows board
-      in
-        (viewPits f Model.A a, viewPits f Model.B b)
+      mapRows (viewPit f) board
+      |> mapTuple (D.hfold 5)
     makeStore =
       viewStore (D.width rowA) 
   in 
-    D.vfold 5 [makeStore board.storeB, rowB, rowA, makeStore board.storeA]
+    [makeStore board.storeB, rowB, rowA, makeStore board.storeA]
+    |> D.vfold 5 
 
-viewPits : PitClickF a -> Model.Player -> List Model.Pit -> D.Diagram a
-viewPits f player =
-  List.indexedMap (viewPit f player) 
-  >> (case player of
-      Model.A -> 
-        identity
-      Model.B ->  -- Reverse second player row (top) due to going counter clockwise
-        List.reverse)
-  >> D.hfold 5
-        
-    
 viewPit : PitClickF a -> Model.Player -> Model.PitLocation -> Model.Pit -> D.Diagram a
 viewPit f player loc pit =
+  -- XXX: clean up this ugliness.
   let 
     radius = 
       12
     color = 
       "#60B5CC"
     handleClick =
-      onClick <| f player loc
-    seed dx dy = 
-      D.circle [] 2 |> D.move (5 + dx) (7 + dy)
-    seeds =
-      -- XXX: one pit can have *more than* 6 seeds
-      -- Perhaps make this generic for N number of seeds, with N displayed in a corner.
-      let 
-        row = (D.hfold 1 <| List.repeat 3 <| seed 0 0)
-      in
-        D.vfold 2 [row, row]
+      f player loc
+      |> onClick
     circle = 
       D.circle [S.fill color, handleClick] radius
     text =
-      (D.text [S.fontSize "12", handleClick] (toString pit.seeds) |> D.move 5 16)  -- FIXME: make fixed size
+      D.text [S.fontSize "12", handleClick] (toString pit.seeds) 
+      |> D.move 5 16 
   in
     if pit.player == player then
       D.stack circle text
@@ -85,6 +67,21 @@ viewStore w seeds =
   let 
     h = 12
     g = D.rect [S.fill "#44ee55"] w h 
-    t = D.text [S.fontSize "12"] (toString seeds) |> D.move 90 10
+    t = D.text [S.fontSize "12"] (toString seeds) 
+        |> D.move 90 10
   in
     D.stack g t 
+
+mapRows : (Model.Player -> Model.PitLocation -> Model.Pit -> b) -> Model -> (List b, List b)
+mapRows f board =
+  let 
+    (a, b) = Model.rows board
+  in
+    -- Player B's rows need to be reverted matching left-to-right display.
+    ( List.indexedMap (f Model.A) a
+    , List.indexedMap (f Model.B) b |> List.reverse 
+    )
+
+mapTuple : (a -> b) -> (a, a) -> (b, b)
+mapTuple f (x, y) =
+  (f x, f y)
