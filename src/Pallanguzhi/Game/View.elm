@@ -4,6 +4,7 @@ import Maybe
 import Html exposing (..)
 
 import Pallanguzhi.Game.Model as Model
+import Pallanguzhi.Game.Hand exposing (Hand)
 import Pallanguzhi.Board.View as BoardView
 
 mapMaybe : (a -> Html b) -> Maybe a -> Html b
@@ -32,7 +33,7 @@ viewState state =
     Model.EndGame _ ->
       div [] [ text <| "Game ended" ]
 
-viewHand : Model.Hand -> Html Model.Msg
+viewHand : Hand -> Html Model.Msg
 viewHand hand =
   div [] 
     [ b [] [ text <| "Player: " ++ toString hand.player ]
