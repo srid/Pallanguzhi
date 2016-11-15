@@ -12,9 +12,13 @@ import List
 
 view : (Int -> a) -> Html a
 view f = 
-  svg 
-    [ S.version "1.1", S.x "0", S.y "0", S.viewBox "0 0 250 100" 
-    ] (board f |> D.draw 10 10)
+  let 
+    svgMeta = 
+      [ S.version "1.1", S.x "0", S.y "0", S.viewBox "0 0 250 100"]
+    drawing = 
+      board f
+  in 
+    svg svgMeta (drawing |> D.draw 2 2)
 
 board : (Int -> a) -> D.Diagram a
 board f =
