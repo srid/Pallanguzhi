@@ -59,6 +59,8 @@ viewPit f player loc pit =
       12
     color = 
       "#60B5CC"
+    handleClick =
+      onClick <| f player loc
     seed dx dy = 
       D.circle [] 2 |> D.move (5 + dx) (7 + dy)
     seeds =
@@ -69,10 +71,9 @@ viewPit f player loc pit =
       in
         D.vfold 2 [row, row]
     circle = 
-      -- FIXME: onClick should be set on text as well.
-      D.circle [S.fill color, onClick (f player loc)] radius
+      D.circle [S.fill color, handleClick] radius
     text =
-      (D.text [S.fontSize "12"] (toString pit.seeds) |> D.move 5 16)  -- FIXME: make fixed size
+      (D.text [S.fontSize "12", handleClick] (toString pit.seeds) |> D.move 5 16)  -- FIXME: make fixed size
   in
     if pit.player == player then
       D.stack circle text
