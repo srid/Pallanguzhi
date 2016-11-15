@@ -8,9 +8,15 @@ import Return exposing (Return)
 import Util.ElmExtra as E
 import Pallanguzhi.Board.Model as Board
 
+type State
+  = Awaiting Board.Player
+  | Seeding Hand
+  | EndGame
+
 type alias Model =
   { board : Board.Model
-  , hand : Maybe Hand  
+  , state : State
+  -- TODO: player turn enforcement.
   -- TODO: next rounds of game with rubbish holes respected
   }
   
@@ -25,126 +31,105 @@ type Msg
   | Play Board.Player Board.PitLocation
   | Continue
 
+type alias Error = String
+
 init : Model
 init = { board = Board.init
-       , hand = Nothing
+       , state = Awaiting Board.A
        }
 
-updateR : Msg -> Model -> Result String (Return Msg Model)
+transition : Msg -> Model -> Result Error Model
+transition msg model = 
+  case (msg, model.state) of
+    (Reset, _) ->
+      Ok init
+    (Play player loc, Awaiting player_) ->
+      -- TODO: compare player and player_
+      model
+      |> dig player loc
+    (Continue, Seeding hand) ->
+      model
+      |> moveHand hand
+    (_, _) ->
+      Err "Invalid transition"
+
+updateR : Msg -> Model -> Result Error (Return Msg Model)
 updateR msg model =
-  case msg of
-    Reset ->
-      init
-      |> Ok
-      |> Result.map Return.singleton
-    Play player pitLoc ->
-      model
-      |> dig player pitLoc
-      |> Result.map returnNext
-    Continue ->
-      model
-      |> moveHand
-      |> Result.map returnNext
-                             
+  model 
+  |> transition msg
+  |> Result.map returnNext
+                            
 returnNext : Model -> Return Msg Model
 returnNext model =
-  case model.hand of
-    Nothing -> 
-      Return.singleton model
-    Just _ ->
+  case model.state of
+    Seeding _ -> 
       E.sendAfter (Time.millisecond * 10) Continue
       |> Return.return model
-
-withHand : Model -> (Hand -> Result String Model) -> Result String Model
-withHand model f =
-  case model.hand of 
-    Just hand ->
-      f hand
-    Nothing ->
-      Err "no hand"
-
-withoutHand : Model -> (Model -> Result String Model) -> Result String Model
-withoutHand model f =
-  case model.hand of
-    Just _ ->
-      Err "already has a hand"
-    Nothing ->
-      f model
+    _ ->
+      Return.singleton model
 
 newHand : Board.PitLocation -> Model -> Result String Model
 newHand loc model =
-  withoutHand model <| \model ->
-    let 
-      pit = 
-        Board.lookup loc model.board
-      hand =
-        { player = pit.player
-        , seeds = 0
-        , loc = loc 
-        }
-    in 
-      case pit.seeds of
-        0 -> 
-          Err "cannot select empty pit"
-        _ ->
-          Ok { model | hand = Just hand }
+  let 
+    pit = 
+      Board.lookup loc model.board
+    hand =
+      { player = pit.player
+      , seeds = 0
+      , loc = loc 
+      }
+  in 
+    case pit.seeds of
+      0 -> 
+        Err "cannot select empty pit"
+      _ ->
+        Ok { model | state = Seeding hand }
 
-moveHand : Model -> Result String Model
-moveHand model =
-  withHand model <| \hand ->
-    let 
-      lk loc = 
-        model |> .board |> Board.lookup loc |> .seeds
-      loc2 = 
-        Board.next hand.loc
-      loc3 = 
-        Board.next loc2
-    in
-      case (hand.seeds, lk hand.loc, lk loc2) of
-        (0, 0, 0) -> -- No hand, next two pits empty. End turn.
-          { model | hand = Nothing }
-          |> Ok
-        (0, 0, s) -> -- Empty pit. Capture next and move on.
-          model
-          |> .board
-          |> Board.clear loc2 
-          |> Board.store hand.player s
-          |> \board -> { model | board = board
-                               , hand = Just { hand | loc = loc3 }}
-          |> Ok
-        (0, s, _) -> -- Continue digging.
-          model 
-          |> .board
-          |> Board.clear hand.loc
-          |> \board -> { model | board = board
-                               , hand = Just { hand | seeds = s
-                                                    , loc = loc2 }}
-          |> Ok
-        (s, 6, _) -> -- Pasu; capture!
-          model
-          |> .board
-          |> Board.clear hand.loc
-          |> Board.store hand.player 6
-          |> \board -> { model | board = board
-                               , hand = Just { hand | seeds = 0
-                                                    , loc = loc2 }}
-          |> Ok
-        (s, _, _) -> -- Sow 1 seed and continue digging.
-          model 
-          |> .board
-          |> Board.inc hand.loc
-          |> \board -> { model | board = board
-                               , hand = Just { hand | seeds = s - 1
-                                                    , loc = loc2 }}
-          |> Ok
-
-runHand_ : Model -> Result String Model
-runHand_ model = 
-  moveHand model 
-  |> Result.andThen (\model -> 
-        case model.hand of
-          Nothing -> Ok model
-          _       -> runHand_ model)
+moveHand : Hand -> Model -> Result String Model
+moveHand hand model =
+  let 
+    lk loc = 
+      model |> .board |> Board.lookup loc |> .seeds
+    loc2 = 
+      Board.next hand.loc
+    loc3 = 
+      Board.next loc2
+  in
+    case (hand.seeds, lk hand.loc, lk loc2) of
+      (0, 0, 0) -> -- No hand, next two pits empty. End turn.
+        -- TODO: determine EndGame
+        { model | state = Awaiting <| Board.otherPlayer hand.player }
+        |> Ok
+      (0, 0, s) -> -- Empty pit. Capture next and move on.
+        model
+        |> .board
+        |> Board.clear loc2 
+        |> Board.store hand.player s
+        |> \board -> { model | board = board
+                              , state = Seeding { hand | loc = loc3 }}
+        |> Ok
+      (0, s, _) -> -- Continue digging.
+        model 
+        |> .board
+        |> Board.clear hand.loc
+        |> \board -> { model | board = board
+                              , state = Seeding { hand | seeds = s , loc = loc2 }}
+        |> Ok
+      (s, 6, _) -> -- Pasu; capture!
+        model
+        |> .board
+        |> Board.clear hand.loc
+        |> Board.store hand.player 6
+        |> \board -> { model | board = board
+                              , state = Seeding { hand | seeds = 0 , loc = loc2 }}
+        |> Ok
+      (s, _, _) -> -- Sow 1 seed and continue digging.
+        model 
+        |> .board
+        |> Board.inc hand.loc
+        |> \board -> { model | board = board
+                              , state = Seeding { hand | seeds = s - 1 , loc = loc2 }}
+        |> Ok
 
 locFor : Board.Player -> Board.PitLocation -> Board.PitLocation
 locFor player loc =

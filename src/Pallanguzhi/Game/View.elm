@@ -15,18 +15,27 @@ view model errorMaybe =
   let
     boardHtml = 
       BoardView.viewC Model.Play model.board 
-    handHtml = 
-      mapMaybe viewHand model.hand
+    stateHtml = 
+      viewState model.state
     errorHtml = 
       viewError errorMaybe
   in
-  div [] [boardHtml, handHtml, errorHtml]
+  div [] [boardHtml, stateHtml, errorHtml]
+
+viewState : Model.State -> Html Model.Msg 
+viewState state =
+  case state of
+    Model.Awaiting player ->
+      div [] [ text <| "Awaiting turn by player: " ++ toString player ]
+    Model.Seeding hand ->
+      viewHand hand
+    Model.EndGame ->
+      div [] [ text <| "Game ended" ]
 
 viewHand : Model.Hand -> Html Model.Msg
 viewHand hand =
   div [] 
-    [ hr [] [] 
-    , b [] [ text <| "Player: " ++ toString hand.player ]
+    [ b [] [ text <| "Player: " ++ toString hand.player ]
     , span [] [ text <| ", Seeds: " ++ toString hand.seeds]
     , span [] [ text <| ", Pit: " ++ toString hand.loc]
     ]

@@ -94,3 +94,10 @@ capture player loc model =
     c = lookup loc model |> .seeds
   in
     model |> clear loc |> store player c 
+
+otherPlayer : Player -> Player
+otherPlayer player =
+  case player of 
+    A -> B
+    B -> A
+
