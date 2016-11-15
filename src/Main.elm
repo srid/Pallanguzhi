@@ -1,5 +1,5 @@
 import Html exposing (..)
-import Html.App
+import Html
 import Return
 import Return exposing (Return)
 
@@ -44,11 +44,11 @@ view : Model -> Html Msg
 view =
   .game
   >> (ModelE.view GameView.view)
-  >> Html.App.map GameMsg
+  >> Html.map GameMsg
 
-main : Program Never
+main : Program Never Model Msg
 main =
-    Html.App.program
+    Html.program
         { init = init
         , update = update
         , subscriptions = always Sub.none
