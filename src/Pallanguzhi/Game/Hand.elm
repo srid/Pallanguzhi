@@ -33,34 +33,41 @@ move hand board =
       Board.lookupSeeds hand.loc board
     seedsNext =
       Board.lookupSeeds (Board.next hand.loc) board
+    seedsNextNext = 
+      Board.lookupSeeds (Board.next <| Board.next hand.loc) board
     keepSeeding (hand, board) =
       (Just hand, board)
-    awaitForOtherPlayer (hand, board) =
+    awaitForOpponent (hand, board) =
       (Nothing, board)
   in
-    case (hand.seeds, seedsBelow, seedsNext) of
-      (0, 0, 0) -> -- No hand, next two pits empty. End turn.
+    case (hand.seeds, seedsBelow, seedsNext, seedsNextNext) of
+      (0, 0, 0, _) -> -- No hand, next two pits empty. End turn.
         -- TODO: determine EndGame
         (hand, board)
-        |> awaitForOtherPlayer
-      (0, 0, s) -> -- Empty pit. Capture next and move on.
+        |> awaitForOpponent
+      (0, 0, s, 0) -> -- Capture and end turn.
+        (hand, board)
+        |> advance 
+        |> capture
+        |> awaitForOpponent
+      (0, 0, s, _) -> -- Capture and continue.
         (hand, board)
         |> advance 
         |> capture
         |> advance 
         |> keepSeeding
-      (0, s, _) -> -- Continue digging.
+      (0, s, _, _) -> -- Continue digging.
         (hand, board)
         |> lift
         |> advance
         |> keepSeeding
-      (s, 5, _) -> -- Pasu; capture!
+      (s, 3, _, _) -> -- Pasu; capture!
         (hand, board)
         |> sow  -- Sow 1 before capturing the 6 seeds
         |> capture
         |> advance
         |> keepSeeding
-      (s, _, _) -> -- Sow 1 seed and continue digging.
+      (s, _, _, _) -> -- Sow 1 seed and continue digging.
         (hand, board)
         |> sow
         |> advance

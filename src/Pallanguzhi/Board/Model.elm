@@ -19,7 +19,7 @@ pitsPerPlayer : number
 pitsPerPlayer = 7
 
 seedsPerPit : number
-seedsPerPit = 12
+seedsPerPit = 6
 
 init : Model
 init = 
@@ -27,7 +27,7 @@ init =
     s = 
       seedsPerPit
     row = 
-      [s, s, s, 2, s, s, s] |> Array.fromList
+      [s, s, s, s, s, s, s] |> Array.fromList
     makePit player seeds =
       {player = player, seeds = seeds}
     makeRow player = 
