@@ -82,10 +82,10 @@ vspace : Int -> Diagram a
 vspace h_ = empty |> \(Diagram w h f) -> Diagram w (h+h_) f
 
 hfold : Int -> List (Diagram a) -> Diagram a
-hfold space = List.foldl happend empty << List.intersperse (hspace space)
+hfold space = List.foldr happend empty << List.intersperse (hspace space)
  
 vfold : Int -> List (Diagram a) -> Diagram a
-vfold space = List.foldl vappend empty << List.intersperse (vspace space)
+vfold space = List.foldr vappend empty << List.intersperse (vspace space)
 
 stack : Diagram a -> Diagram a -> Diagram a
 stack (Diagram w1 h1 f1) (Diagram w2 h2 f2) =
