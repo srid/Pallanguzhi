@@ -31,8 +31,7 @@ init =
     makePit player seeds =
       {player = player, seeds = seeds}
     makeRow player = 
-      row
-      |> Array.map (makePit player) 
+      Array.map (makePit player) row
   in
     { pits = Array.append (makeRow A) (makeRow B)
     , storeA = 0
@@ -94,3 +93,10 @@ capture player loc model =
     c = lookup loc model |> .seeds
   in
     model |> clear loc |> store player c 
+
+otherPlayer : Player -> Player
+otherPlayer player =
+  case player of 
+    A -> B
+    B -> A
+

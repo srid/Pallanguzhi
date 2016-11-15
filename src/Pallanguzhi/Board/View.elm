@@ -37,7 +37,7 @@ viewBoard f board =
     makeStore =
       viewStore (D.width rowA) 
   in 
-    [makeStore board.storeB, rowB, rowA, makeStore board.storeA]
+    [makeStore Model.B board.storeB, rowB, rowA, makeStore Model.A board.storeA]
     |> D.vfold 5 
 
 viewPit : PitClickF a -> Model.Player -> Model.PitLocation -> Model.Pit -> D.Diagram a
@@ -62,12 +62,12 @@ viewPit f player loc pit =
     else
       Debug.crash "incorrect player"
 
-viewStore : Int -> Int -> D.Diagram a
-viewStore w seeds =
+viewStore : Int -> Model.Player -> Int -> D.Diagram a
+viewStore w player seeds =
   let 
     h = 12
     g = D.rect [S.fill "#44ee55"] w h 
-    t = D.text [S.fontSize "12"] (toString seeds) 
+    t = D.text [S.fontSize "12"] (toString player ++ ":" ++ toString seeds) 
         |> D.move 90 10
   in
     D.stack g t 
