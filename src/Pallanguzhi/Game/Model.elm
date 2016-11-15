@@ -45,12 +45,13 @@ transition msg model =
     (Play player loc, Awaiting player_) ->
       if player == player_ then
         model
-        |> dig player loc
+        |> newHand (Board.locFor player loc) 
       else
         Err "Wrong player"
     (Continue, Seeding hand) ->
       model
       |> moveHand hand
+      |> Ok
     (_, _) ->
       Err "Bad game transition"
 
@@ -86,58 +87,76 @@ newHand loc model =
       _ ->
         Ok { model | state = Seeding hand }
 
-moveHand : Hand -> Model -> Result String Model
+capture : (Hand, Board.Model) -> (Hand, Board.Model)
+capture (hand, board) =
+  let 
+    seeds = Board.lookupSeeds hand.loc board
+  in
+    ( hand
+    , board
+      |> Board.clear hand.loc
+      |> Board.store hand.player seeds
+    )
+
+lift : (Hand, Board.Model) -> (Hand, Board.Model)
+lift (hand, board) =
+  let 
+    seeds = Board.lookupSeeds hand.loc board
+  in 
+    ( { hand | seeds = seeds }
+    , Board.clear hand.loc board
+    )
+
+sow : (Hand, Board.Model) -> (Hand, Board.Model)
+sow (hand, board) =
+  ( { hand | seeds = hand.seeds - 1 }
+  , Board.inc hand.loc board
+  )
+
+advance : (Hand, Board.Model) -> (Hand, Board.Model)
+advance (hand, board) =
+  let 
+    newHand = { hand | loc = Board.next hand.loc }
+  in
+    (newHand, board)
+
+moveHand : Hand -> Model -> Model
 moveHand hand model =
   let 
-    lk loc = 
-      model |> .board |> Board.lookup loc |> .seeds
-    loc2 = 
-      Board.next hand.loc
-    loc3 = 
-      Board.next loc2
+    seedsBelow =
+      Board.lookupSeeds hand.loc model.board
+    seedsNext =
+      Board.lookupSeeds (Board.next hand.loc) model.board
+    keepSeeding (hand, board) =
+      { model | board = board, state = Seeding hand }
+    awaitForOtherPlayer (hand, board) =
+      { model | state = Awaiting <| Board.otherPlayer hand.player }
   in
-    case (hand.seeds, lk hand.loc, lk loc2) of
+    case (hand.seeds, seedsBelow, seedsNext) of
       (0, 0, 0) -> -- No hand, next two pits empty. End turn.
         -- TODO: determine EndGame
-        { model | state = Awaiting <| Board.otherPlayer hand.player }
-        |> Ok
+        (hand, model.board)
+        |> awaitForOtherPlayer
       (0, 0, s) -> -- Empty pit. Capture next and move on.
-        model
-        |> .board
-        |> Board.clear loc2 
-        |> Board.store hand.player s
-        |> \board -> { model | board = board
-                             , state = Seeding { hand | loc = loc3 }}
-        |> Ok
+        (hand, model.board)
+        |> advance 
+        |> capture
+        |> advance 
+        |> keepSeeding
       (0, s, _) -> -- Continue digging.
-        model 
-        |> .board
-        |> Board.clear hand.loc
-        |> \board -> { model | board = board
-                             , state = Seeding { hand | seeds = s , loc = loc2 }}
-        |> Ok
+        (hand, model.board)
+        |> lift
+        |> advance
+        |> keepSeeding
       (s, 5, _) -> -- Pasu; capture!
-        model
-        |> .board
-        |> Board.clear hand.loc
-        |> Board.store hand.player 6
-        |> \board -> { model | board = board
-                             , state = Seeding { hand | seeds = s - 1 , loc = loc2 }}
-        |> Ok
+        (hand, model.board)
+        |> sow  -- Sow 1 before capturing the 6 seeds
+        |> capture
+        |> advance
+        |> keepSeeding
       (s, _, _) -> -- Sow 1 seed and continue digging.
-        model 
-        |> .board
-        |> Board.inc hand.loc
-        |> \board -> { model | board = board
-                             , state = Seeding { hand | seeds = s - 1 , loc = loc2 }}
-        |> Ok
-
-locFor : Board.Player -> Board.PitLocation -> Board.PitLocation
-locFor player loc =
-  case player of
-    Board.A -> loc
-    Board.B -> Board.pitsPerPlayer + loc
-
-dig : Board.Player -> Board.PitLocation -> Model -> Result String Model
-dig player loc model =
-  newHand (locFor player loc) model
+        (hand, model.board)
+        |> sow
+        |> advance
+        |> keepSeeding
+        

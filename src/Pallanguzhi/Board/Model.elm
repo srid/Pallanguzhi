@@ -56,6 +56,9 @@ lookup loc model =
       -- Invalid index is only possible due to programmer error.
       Debug.crash <| "error: invalid index: " ++ (toString loc)
 
+lookupSeeds : PitLocation -> Model -> Int
+lookupSeeds loc = lookup loc >> .seeds
+
 next : PitLocation -> PitLocation
 next loc =
   let 
@@ -63,8 +66,8 @@ next loc =
   in 
     (loc + 1) % total
 
-updateSeeds : PitLocation -> (Int -> Int) -> Model -> Model
-updateSeeds loc f model =
+update : PitLocation -> (Int -> Int) -> Model -> Model
+update loc f model =
   let 
     pit = 
       lookup loc model
@@ -75,11 +78,11 @@ updateSeeds loc f model =
 
 inc : PitLocation -> Model -> Model
 inc loc model =
-  updateSeeds loc (\s -> s + 1)  model
+  update loc (\s -> s + 1)  model
 
 clear : PitLocation -> Model -> Model
 clear loc model =
-  updateSeeds loc (always 0) model
+  update loc (always 0) model
 
 store : Player -> Int -> Model -> Model
 store player seeds model =
@@ -87,16 +90,15 @@ store player seeds model =
     A -> { model | storeA = model.storeA + seeds }
     B -> { model | storeB = model.storeB + seeds }
 
-capture : Player -> PitLocation -> Model -> Model
-capture player loc model = 
-  let 
-    c = lookup loc model |> .seeds
-  in
-    model |> clear loc |> store player c 
-
 otherPlayer : Player -> Player
 otherPlayer player =
   case player of 
     A -> B
     B -> A
+
+locFor : Player -> PitLocation -> PitLocation
+locFor player loc =
+  case player of
+    A -> loc
+    B -> pitsPerPlayer + loc
 
