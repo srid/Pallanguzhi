@@ -1,13 +1,17 @@
 module Pallanguzhi.Game.Model exposing (..)
 
+import Time
+
 import Return
 import Return exposing (Return)
 
+import Util.ElmExtra as E
 import Pallanguzhi.Board.Model as Board
 
 type alias Model =
   { board : Board.Model
   , hand : Maybe Hand  
+  -- TODO: next rounds of game with rubbish holes respected
   }
   
 type alias Hand = 
@@ -19,6 +23,7 @@ type alias Hand =
 type Msg 
   = Reset
   | Play Board.Player Board.PitLocation
+  | Continue
 
 init : Model
 init = { board = Board.init
@@ -27,15 +32,29 @@ init = { board = Board.init
 
 updateR : Msg -> Model -> Result String (Return Msg Model)
 updateR msg model =
-  (case msg of
+  case msg of
     Reset ->
       init
       |> Ok
+      |> Result.map Return.singleton
     Play player pitLoc ->
       model
-      |> dig player pitLoc)
-  |> Result.map Return.singleton
-  
+      |> dig player pitLoc
+      |> Result.map returnNext
+    Continue ->
+      model
+      |> moveHand
+      |> Result.map returnNext
+                             
+returnNext : Model -> Return Msg Model
+returnNext model =
+  case model.hand of
+    Nothing -> 
+      Return.singleton model
+    Just _ ->
+      E.sendAfter (Time.millisecond * 10) Continue
+      |> Return.return model
+
 withHand : Model -> (Hand -> Result String Model) -> Result String Model
 withHand model f =
   case model.hand of 
@@ -119,13 +138,13 @@ moveHand model =
                                                     , loc = loc2 }}
           |> Ok
 
-runHand : Model -> Result String Model
-runHand model = 
+runHand_ : Model -> Result String Model
+runHand_ model = 
   moveHand model 
   |> Result.andThen (\model -> 
         case model.hand of
           Nothing -> Ok model
-          _       -> runHand model)
+          _       -> runHand_ model)
 
 locFor : Board.Player -> Board.PitLocation -> Board.PitLocation
 locFor player loc =
@@ -136,4 +155,3 @@ locFor player loc =
 dig : Board.Player -> Board.PitLocation -> Model -> Result String Model
 dig player loc model =
   newHand (locFor player loc) model
-  |> Result.andThen runHand
