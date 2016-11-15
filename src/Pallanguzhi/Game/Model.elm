@@ -44,9 +44,11 @@ transition msg model =
     (Reset, _) ->
       Ok init
     (Play player loc, Awaiting player_) ->
-      -- TODO: compare player and player_
-      model
-      |> dig player loc
+      if player == player_ then
+        model
+        |> dig player loc
+      else
+        Err "Wrong player"
     (Continue, Seeding hand) ->
       model
       |> moveHand hand
