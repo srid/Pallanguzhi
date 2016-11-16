@@ -102,6 +102,12 @@ store player seeds model =
     A -> { model | storeA = model.storeA + seeds }
     B -> { model | storeB = model.storeB + seeds }
 
+storeFor : Player -> Model ->Int 
+storeFor player model =
+  case player of
+    A -> model.storeA
+    B -> model.storeB
+
 opponentOf : Player -> Player
 opponentOf player =
   case player of 

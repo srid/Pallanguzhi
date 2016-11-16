@@ -17,22 +17,55 @@ type alias PitClickF a
   -> Board.PitLocation
   -> a
 
+-- FIXME: replace PitLocation (optional +7) confusion with Board.Cursor
+type alias Config = 
+  { focusPit    : Maybe Board.PitLocation
+  , focusPlayer : Maybe Board.Player
+  }
+
+defaultConfig : Config
+defaultConfig = { focusPit = Nothing, focusPlayer = Nothing }
+
+focussingPit : Config -> Board.PitLocation -> Bool
+focussingPit config loc =
+  case config.focusPit of
+    Just focusPit -> focusPit == loc
+    Nothing -> False
+
+focussingPlayer : Config -> Board.Player -> Bool
+focussingPlayer config player =
+  case config.focusPlayer of
+    Just focusPlayer -> focusPlayer == player
+    Nothing -> False
+
+configFor : Game.Model -> Config 
+configFor model =
+  case model of 
+    Game.Awaiting player board ->
+      { defaultConfig | focusPlayer = Just player }
+    Game.Seeding hand board ->
+      { defaultConfig | focusPlayer = Just hand.player
+                      , focusPit = Just hand.loc }
+    Game.EndGame board ->
+      defaultConfig
+
 view : Game.Model -> Maybe String -> Html Game.Msg
 view model error =
   let
-    boardHtml = Game.getBoard model |> viewBoard
+    boardHtml = viewBoard model
     stateHtml = viewState model
     errorHtml = viewError error
   in
     div [] [ boardHtml, stateHtml, errorHtml ]
 
-viewBoard : Board.Model -> Html Game.Msg
-viewBoard board =
+viewBoard : Game.Model -> Html Game.Msg
+viewBoard model =
   let
+    board = 
+      Game.getBoard model
     rowUIOf player =
       board 
-      -- xxx use elm-state to pass "current pit" info
-      |> Board.mapRowOf player (viewPit Game.Play player)
+      |> Board.mapRowOf player (viewPit Game.Play model player)
       |> Board.displayOrder player
       |> D.hfold 5
     rowA =
@@ -40,12 +73,12 @@ viewBoard board =
     rowB =
       rowUIOf Board.B  
     storeFor =
-      viewStore (D.width rowA)
+      viewStore model (D.width rowA)
     boardUI =
-      [ storeFor Board.B board.storeB 
+      [ storeFor Board.B 
       , rowB
       , rowA
-      , storeFor Board.A board.storeA
+      , storeFor Board.A
       ]
       |> D.vfold 5
   in 
@@ -65,6 +98,7 @@ viewState state =
     Game.Awaiting player _ ->
       div [] [ text <| "Awaiting turn by player: " ++ toString player ]
     Game.Seeding hand _ ->
+      -- TODO: emphasized UI for hand seed count
       viewHand hand
     Game.EndGame _ ->
       div [] [ text <| "Game ended" ]
@@ -86,17 +120,20 @@ viewError errorMaybe =
       div [] [ text <| "Error: " ++ e ]
 
 viewPit : PitClickF a 
+       -> Game.Model
        -> Board.Player 
        -> Board.PitLocation 
        -> Board.Pit 
        -> D.Diagram a
-viewPit f player loc pit =
+viewPit f model player loc pit =
   -- XXX: clean up this ugliness.
   let 
+    config =
+      configFor model
     radius = 
       12
     color = 
-      "#60B5CC"
+      if focussingPit config (Board.locFor player loc) then "orange" else "#60B5CC"
     handleClick =
       f player loc
       |> onClick
@@ -111,12 +148,17 @@ viewPit f player loc pit =
     else
       Debug.crash "incorrect player"
 
-viewStore : Int -> Board.Player -> Int -> D.Diagram a
-viewStore w player seeds =
+viewStore : Game.Model -> Int -> Board.Player -> D.Diagram a
+viewStore model w player =
   let 
+    config = configFor model
+    board = Game.getBoard model
+    seeds = Board.storeFor player board
+    label = toString player ++ ":" ++ toString seeds
+    color = if focussingPlayer config player then "orange" else "grey" 
     h = 12
-    g = D.rect [S.fill "#44ee55"] w h 
-    t = D.text [S.fontSize "12"] (toString player ++ ":" ++ toString seeds) 
+    g = D.rect [S.fill color] w h 
+    t = D.text [S.fontSize "12"] label
         |> D.move 90 10
   in
     D.stack g t 
