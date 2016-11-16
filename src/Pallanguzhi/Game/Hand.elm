@@ -1,6 +1,6 @@
 module Pallanguzhi.Game.Hand exposing (..)
 
-import Pallanguzhi.Board.Model as Board
+import Pallanguzhi.Game.Board as Board
 
 type alias Hand = 
   { player : Board.Player 

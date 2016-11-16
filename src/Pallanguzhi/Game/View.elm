@@ -10,7 +10,7 @@ import Svg.Events exposing (onClick)
 
 import Pallanguzhi.Game.Model as Model
 import Pallanguzhi.Game.Hand exposing (Hand)
-import Pallanguzhi.Board.Model as Board
+import Pallanguzhi.Game.Board as Board
 
 type alias PitClickF a
   =  Board.Player

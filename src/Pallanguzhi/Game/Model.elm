@@ -6,7 +6,7 @@ import Return
 import Return exposing (Return)
 
 import Util.ElmExtra as E
-import Pallanguzhi.Board.Model as Board
+import Pallanguzhi.Game.Board as Board
 import Pallanguzhi.Game.Hand exposing (Hand)
 import Pallanguzhi.Game.Hand as Hand
 
