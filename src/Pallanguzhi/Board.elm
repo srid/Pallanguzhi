@@ -1,4 +1,4 @@
-module Pallanguzhi.Board.Model exposing (..)
+module Pallanguzhi.Board exposing (..)
 
 import Array
 import Array exposing (Array)
@@ -38,23 +38,26 @@ init =
     , storeB = 0
     }
 
-rows : Model -> (List Pit, List Pit)
-rows model = 
-  let 
-    f g = Array.toList >> g pitsPerPlayer
-  in 
-    ( f List.take model.pits
-    , f List.drop model.pits
-    )
+-- Return the pit row for this player
+rowOf : Player -> Model -> List Pit
+rowOf player model =
+  case player of
+    A -> model.pits |> Array.toList |> List.take pitsPerPlayer
+    B -> model.pits |> Array.toList |> List.drop pitsPerPlayer
 
-rowFor : Player -> Model -> List Pit
-rowFor player model =
-  let 
-    (rowA, rowB) = rows model
-  in 
-    case player of
-      A -> rowA
-      B -> rowB
+mapRowOf : Player
+        -> (PitLocation -> Pit -> b)
+        -> Model
+        -> List b
+mapRowOf player f model =
+  rowOf player model
+  |> List.indexedMap f
+
+displayOrder : Player -> List a -> List a
+displayOrder player =
+  case player of 
+    A -> identity
+    B -> List.reverse
 
 lookup : PitLocation -> Model -> Pit
 lookup loc model = 

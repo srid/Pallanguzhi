@@ -1,15 +1,14 @@
-module Pallanguzhi.Game.Model exposing (..)
+module Pallanguzhi.Game exposing (..)
 
 import Time
-import Tuple
 
 import Return
 import Return exposing (Return)
 
 import Util.ElmExtra as E
-import Pallanguzhi.Board.Model as Board
-import Pallanguzhi.Game.Hand exposing (Hand)
-import Pallanguzhi.Game.Hand as Hand
+import Pallanguzhi.Board as Board
+import Pallanguzhi.Hand exposing (Hand)
+import Pallanguzhi.Hand as Hand
 
 -- TODO: model rounds
 type Model
@@ -66,10 +65,8 @@ returnNext model =
 moveHand : Hand -> Board.Model -> Model
 moveHand hand board =
   let 
-    opponent =
-      Board.opponentOf hand.player
-    (handMaybe, board_) = 
-      Hand.move hand board
+    opponent = Board.opponentOf hand.player
+    (handMaybe, board_) = Hand.move hand board
   in
     case handMaybe of 
       Just hand_ ->
@@ -84,7 +81,7 @@ moveHand hand board =
 playerHasSeeds : Board.Player -> Board.Model -> Bool
 playerHasSeeds player board =
   board
-  |> Board.rowFor player
+  |> Board.rowOf player
   |> List.map .seeds
   |> List.sum
   |> ((<) 0)
