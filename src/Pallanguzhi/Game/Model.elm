@@ -1,6 +1,7 @@
 module Pallanguzhi.Game.Model exposing (..)
 
 import Time
+import Tuple
 
 import Return
 import Return exposing (Return)
@@ -10,10 +11,10 @@ import Pallanguzhi.Board.Model as Board
 import Pallanguzhi.Game.Hand exposing (Hand)
 import Pallanguzhi.Game.Hand as Hand
 
+-- TODO: model rounds
 type Model
   = Awaiting Board.Player Board.Model
   | Seeding Hand Board.Model
-  -- TODO: next rounds of game with rubbish holes respected
   | EndGame Board.Model
 
 type Msg 
@@ -57,7 +58,7 @@ returnNext : Model -> Return Msg Model
 returnNext model =
   case model of
     Seeding _ _ -> 
-      E.sendAfter (Time.millisecond * 50) Continue
+      E.sendAfter (Time.millisecond * 5) Continue
       |> Return.return model
     _ ->
       Return.singleton model
@@ -66,7 +67,7 @@ moveHand : Hand -> Board.Model -> Model
 moveHand hand board =
   let 
     opponent =
-      Board.otherPlayer hand.player
+      Board.opponentOf hand.player
     (handMaybe, board_) = 
       Hand.move hand board
   in
@@ -74,4 +75,16 @@ moveHand hand board =
       Just hand_ ->
         Seeding hand_ board_
       Nothing ->
-        Awaiting opponent board_
+        if playerHasSeeds opponent board_ then
+          Awaiting opponent board_
+        else
+          -- This should start next round.
+          EndGame board_
+
+playerHasSeeds : Board.Player -> Board.Model -> Bool
+playerHasSeeds player board =
+  board
+  |> Board.rowFor player
+  |> List.map .seeds
+  |> List.sum
+  |> ((<) 0)

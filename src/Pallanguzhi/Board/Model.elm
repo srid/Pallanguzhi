@@ -47,6 +47,15 @@ rows model =
     , f List.drop model.pits
     )
 
+rowFor : Player -> Model -> List Pit
+rowFor player model =
+  let 
+    (rowA, rowB) = rows model
+  in 
+    case player of
+      A -> rowA
+      B -> rowB
+
 lookup : PitLocation -> Model -> Pit
 lookup loc model = 
   case Array.get loc model.pits of
@@ -90,8 +99,8 @@ store player seeds model =
     A -> { model | storeA = model.storeA + seeds }
     B -> { model | storeB = model.storeB + seeds }
 
-otherPlayer : Player -> Player
-otherPlayer player =
+opponentOf : Player -> Player
+opponentOf player =
   case player of 
     A -> B
     B -> A

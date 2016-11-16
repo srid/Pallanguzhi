@@ -22,16 +22,13 @@ init = { game = ModelE.init Game.init }
 -- Msg
       
 type Msg 
-  = NoOp
-  | GameMsg Game.Msg
+  = GameMsg Game.Msg
 
 -- Update
 
 update : Msg -> Model -> Return Msg Model
 update msg model =
   case msg of
-    NoOp ->
-      Return.singleton model
     GameMsg action ->
       model
       |> .game
