@@ -1,7 +1,6 @@
 module Pallanguzhi.Game.Model exposing (..)
 
 import Time
-import Tuple
 
 import Return
 import Return exposing (Return)
@@ -66,10 +65,8 @@ returnNext model =
 moveHand : Hand -> Board.Model -> Model
 moveHand hand board =
   let 
-    opponent =
-      Board.opponentOf hand.player
-    (handMaybe, board_) = 
-      Hand.move hand board
+    opponent = Board.opponentOf hand.player
+    (handMaybe, board_) = Hand.move hand board
   in
     case handMaybe of 
       Just hand_ ->
@@ -84,7 +81,7 @@ moveHand hand board =
 playerHasSeeds : Board.Player -> Board.Model -> Bool
 playerHasSeeds player board =
   board
-  |> Board.rowFor player
+  |> Board.rowOf player
   |> List.map .seeds
   |> List.sum
   |> ((<) 0)
