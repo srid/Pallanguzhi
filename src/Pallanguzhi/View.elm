@@ -17,22 +17,44 @@ type alias PitClickF a
   -> Board.PitLocation
   -> a
 
+-- FIXME: replace PitLocation (optional +7) confusion with Board.Cursor
+type alias Config = 
+  { focusPit    : Maybe Board.PitLocation
+  , focusPlayer : Maybe Board.Player
+  }
+
+defaultConfig : Config
+defaultConfig = { focusPit = Nothing, focusPlayer = Nothing }
+
+configFor : Game.Model -> Config 
+configFor model =
+  case model of 
+    Game.Awaiting player board ->
+      { defaultConfig | focusPlayer = Just player }
+    Game.Seeding hand board ->
+      { defaultConfig | focusPlayer = Just hand.player
+                      , focusPit = Just hand.loc }
+    Game.EndGame board ->
+      defaultConfig
+
 view : Game.Model -> Maybe String -> Html Game.Msg
 view model error =
   let
-    boardHtml = Game.getBoard model |> viewBoard
+    boardHtml = viewBoard model
     stateHtml = viewState model
     errorHtml = viewError error
   in
     div [] [ boardHtml, stateHtml, errorHtml ]
 
-viewBoard : Board.Model -> Html Game.Msg
-viewBoard board =
+viewBoard : Game.Model -> Html Game.Msg
+viewBoard model =
   let
+    board = 
+      Game.getBoard model
     rowUIOf player =
       board 
       -- xxx use elm-state to pass "current pit" info
-      |> Board.mapRowOf player (viewPit Game.Play player)
+      |> Board.mapRowOf player (viewPit Game.Play model player)
       |> Board.displayOrder player
       |> D.hfold 5
     rowA =
@@ -86,17 +108,24 @@ viewError errorMaybe =
       div [] [ text <| "Error: " ++ e ]
 
 viewPit : PitClickF a 
+       -> Game.Model
        -> Board.Player 
        -> Board.PitLocation 
        -> Board.Pit 
        -> D.Diagram a
-viewPit f player loc pit =
+viewPit f model player loc pit =
   -- XXX: clean up this ugliness.
   let 
+    config =
+      configFor model
+    focusPit = 
+      case config.focusPit of
+        Just focusLoc -> focusLoc == Board.locFor player loc
+        Nothing -> False
     radius = 
       12
     color = 
-      "#60B5CC"
+      if focusPit then "#B5CC60" else "#60B5CC"
     handleClick =
       f player loc
       |> onClick
