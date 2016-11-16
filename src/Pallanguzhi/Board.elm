@@ -1,4 +1,4 @@
-module Pallanguzhi.Game.Board exposing (..)
+module Pallanguzhi.Board exposing (..)
 
 import Array
 import Array exposing (Array)

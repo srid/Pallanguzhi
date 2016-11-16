@@ -1,4 +1,4 @@
-module Pallanguzhi.Game.Model exposing (..)
+module Pallanguzhi.Game exposing (..)
 
 import Time
 
@@ -6,9 +6,9 @@ import Return
 import Return exposing (Return)
 
 import Util.ElmExtra as E
-import Pallanguzhi.Game.Board as Board
-import Pallanguzhi.Game.Hand exposing (Hand)
-import Pallanguzhi.Game.Hand as Hand
+import Pallanguzhi.Board as Board
+import Pallanguzhi.Hand exposing (Hand)
+import Pallanguzhi.Hand as Hand
 
 -- TODO: model rounds
 type Model

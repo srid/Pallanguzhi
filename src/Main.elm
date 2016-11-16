@@ -3,8 +3,8 @@ import Html
 import Return
 import Return exposing (Return)
 
-import Pallanguzhi.Game.Model as Game
-import Pallanguzhi.Game.View as GameView
+import Pallanguzhi.Game as Game
+import Pallanguzhi.View as View
 
 import Util.ModelE exposing (ModelES)
 import Util.ModelE as ModelE
@@ -40,7 +40,7 @@ update msg model =
 view : Model -> Html Msg
 view =
   .game
-  >> (ModelE.view GameView.view)
+  >> (ModelE.view View.view)
   >> Html.map GameMsg
 
 main : Program Never Model Msg

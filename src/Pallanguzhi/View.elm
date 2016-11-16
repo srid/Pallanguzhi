@@ -1,4 +1,4 @@
-module Pallanguzhi.Game.View exposing (view)
+module Pallanguzhi.View exposing (view)
 
 import Maybe
 import Html exposing (..)
@@ -8,31 +8,31 @@ import Svg exposing (svg)
 import Svg.Attributes as S
 import Svg.Events exposing (onClick)
 
-import Pallanguzhi.Game.Model as Model
-import Pallanguzhi.Game.Hand exposing (Hand)
-import Pallanguzhi.Game.Board as Board
+import Pallanguzhi.Game as Game
+import Pallanguzhi.Hand exposing (Hand)
+import Pallanguzhi.Board as Board
 
 type alias PitClickF a
   =  Board.Player
   -> Board.PitLocation
   -> a
 
-view : Model.Model -> Maybe String -> Html Model.Msg
+view : Game.Model -> Maybe String -> Html Game.Msg
 view model error =
   let
-    boardHtml = Model.getBoard model |> viewBoard
+    boardHtml = Game.getBoard model |> viewBoard
     stateHtml = viewState model
     errorHtml = viewError error
   in
     div [] [ boardHtml, stateHtml, errorHtml ]
 
-viewBoard : Board.Model -> Html Model.Msg
+viewBoard : Board.Model -> Html Game.Msg
 viewBoard board =
   let
     rowUIOf player =
       board 
       -- xxx use elm-state to pass "current pit" info
-      |> Board.mapRowOf player (viewPit Model.Play player)
+      |> Board.mapRowOf player (viewPit Game.Play player)
       |> Board.displayOrder player
       |> D.hfold 5
     rowA =
@@ -59,17 +59,17 @@ viewDiagram diagram =
   in 
     svg svgMeta (diagram |> D.draw 2 2)
     
-viewState : Model.Model -> Html Model.Msg 
+viewState : Game.Model -> Html Game.Msg 
 viewState state =
   case state of
-    Model.Awaiting player _ ->
+    Game.Awaiting player _ ->
       div [] [ text <| "Awaiting turn by player: " ++ toString player ]
-    Model.Seeding hand _ ->
+    Game.Seeding hand _ ->
       viewHand hand
-    Model.EndGame _ ->
+    Game.EndGame _ ->
       div [] [ text <| "Game ended" ]
 
-viewHand : Hand -> Html Model.Msg
+viewHand : Hand -> Html Game.Msg
 viewHand hand =
   div [] 
     [ b [] [ text <| "Player: " ++ toString hand.player ]
