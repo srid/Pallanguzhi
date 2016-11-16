@@ -6,15 +6,16 @@ import Html exposing (..)
 import Util.Diagram as D
 import Svg exposing (svg)
 import Svg.Attributes as S
+import Svg.Events exposing (onClick)
 
 import Pallanguzhi.Game.Model as Model
 import Pallanguzhi.Game.Hand exposing (Hand)
 import Pallanguzhi.Board.Model as Board
-import Pallanguzhi.Board.View as BoardView
 
-mapMaybe : (a -> Html b) -> Maybe a -> Html b
-mapMaybe f =
-  Maybe.map f >> Maybe.withDefault (text "Nothing")
+type alias PitClickF a
+  =  Board.Player
+  -> Board.PitLocation
+  -> a
 
 view : Model.Model -> Maybe String -> Html Model.Msg
 view model error =
@@ -30,7 +31,8 @@ viewBoard board =
   let
     rowUIOf player =
       board 
-      |> Board.mapRowOf player (BoardView.viewPit Model.Play player)
+      -- xxx use elm-state to pass "current pit" info
+      |> Board.mapRowOf player (viewPit Model.Play player)
       |> Board.displayOrder player
       |> D.hfold 5
     rowA =
@@ -38,7 +40,7 @@ viewBoard board =
     rowB =
       rowUIOf Board.B  
     storeFor =
-      BoardView.viewStore (D.width rowA)
+      viewStore (D.width rowA)
     boardUI =
       [ storeFor Board.B board.storeB 
       , rowB
@@ -57,7 +59,6 @@ viewDiagram diagram =
   in 
     svg svgMeta (diagram |> D.draw 2 2)
     
-
 viewState : Model.Model -> Html Model.Msg 
 viewState state =
   case state of
@@ -82,4 +83,40 @@ viewError errorMaybe =
     Nothing -> 
       div [] []
     Just e -> 
-      div [] [ text <| "Error: " ++ e ] 
+      div [] [ text <| "Error: " ++ e ]
+
+viewPit : PitClickF a 
+       -> Board.Player 
+       -> Board.PitLocation 
+       -> Board.Pit 
+       -> D.Diagram a
+viewPit f player loc pit =
+  -- XXX: clean up this ugliness.
+  let 
+    radius = 
+      12
+    color = 
+      "#60B5CC"
+    handleClick =
+      f player loc
+      |> onClick
+    circle = 
+      D.circle [S.fill color, handleClick] radius
+    text =
+      D.text [S.fontSize "12", handleClick] (toString pit.seeds) 
+      |> D.move 5 16 
+  in
+    if pit.player == player then
+      D.stack circle text
+    else
+      Debug.crash "incorrect player"
+
+viewStore : Int -> Board.Player -> Int -> D.Diagram a
+viewStore w player seeds =
+  let 
+    h = 12
+    g = D.rect [S.fill "#44ee55"] w h 
+    t = D.text [S.fontSize "12"] (toString player ++ ":" ++ toString seeds) 
+        |> D.move 90 10
+  in
+    D.stack g t 
