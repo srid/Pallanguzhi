@@ -9,7 +9,7 @@ type Player = A | B
 type alias PitLocation = Int
 type alias Pit = { player : Player, seeds : Int}
 
-type alias Model =
+type alias Board =
   { pits : Array Pit
   , storeA : Int
   , storeB : Int
@@ -21,7 +21,7 @@ pitsPerPlayer = 7
 seedsPerPit : number
 seedsPerPit = 6
 
-init : Model
+init : Board
 init = 
   let 
     s = 
@@ -39,18 +39,18 @@ init =
     }
 
 -- Return the pit row for this player
-rowOf : Player -> Model -> List Pit
-rowOf player model =
+rowOf : Player -> Board -> List Pit
+rowOf player board =
   case player of
-    A -> model.pits |> Array.toList |> List.take pitsPerPlayer
-    B -> model.pits |> Array.toList |> List.drop pitsPerPlayer
+    A -> board.pits |> Array.toList |> List.take pitsPerPlayer
+    B -> board.pits |> Array.toList |> List.drop pitsPerPlayer
 
 mapRowOf : Player
         -> (PitLocation -> Pit -> b)
-        -> Model
+        -> Board
         -> List b
-mapRowOf player f model =
-  rowOf player model
+mapRowOf player f board =
+  rowOf player board
   |> List.indexedMap f
 
 displayOrder : Player -> List a -> List a
@@ -59,16 +59,16 @@ displayOrder player =
     A -> identity
     B -> List.reverse
 
-lookup : PitLocation -> Model -> Pit
-lookup loc model = 
-  case Array.get loc model.pits of
+lookup : PitLocation -> Board -> Pit
+lookup loc board = 
+  case Array.get loc board.pits of
     Just pit -> 
       pit
     Nothing  -> 
       -- Invalid index is only possible due to programmer error.
       Debug.crash <| "error: invalid index: " ++ (toString loc)
 
-lookupSeeds : PitLocation -> Model -> Int
+lookupSeeds : PitLocation -> Board -> Int
 lookupSeeds loc = lookup loc >> .seeds
 
 next : PitLocation -> PitLocation
@@ -78,35 +78,35 @@ next loc =
   in 
     (loc + 1) % total
 
-update : PitLocation -> (Int -> Int) -> Model -> Model
-update loc f model =
+update : PitLocation -> (Int -> Int) -> Board -> Board
+update loc f board =
   let 
     pit = 
-      lookup loc model
+      lookup loc board
     pits = 
-      Array.set loc { pit | seeds = f pit.seeds } model.pits
+      Array.set loc { pit | seeds = f pit.seeds } board.pits
   in
-    { model | pits = pits }
+    { board | pits = pits }
 
-inc : PitLocation -> Model -> Model
-inc loc model =
-  update loc (\s -> s + 1)  model
+inc : PitLocation -> Board -> Board
+inc loc board =
+  update loc (\s -> s + 1)  board
 
-clear : PitLocation -> Model -> Model
-clear loc model =
-  update loc (always 0) model
+clear : PitLocation -> Board -> Board
+clear loc board =
+  update loc (always 0) board
 
-store : Player -> Int -> Model -> Model
-store player seeds model =
+store : Player -> Int -> Board -> Board
+store player seeds board =
   case player of
-    A -> { model | storeA = model.storeA + seeds }
-    B -> { model | storeB = model.storeB + seeds }
+    A -> { board | storeA = board.storeA + seeds }
+    B -> { board | storeB = board.storeB + seeds }
 
-storeFor : Player -> Model ->Int 
-storeFor player model =
+storeFor : Player -> Board ->Int 
+storeFor player board =
   case player of
-    A -> model.storeA
-    B -> model.storeB
+    A -> board.storeA
+    B -> board.storeB
 
 opponentOf : Player -> Player
 opponentOf player =

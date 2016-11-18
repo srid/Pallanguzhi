@@ -6,15 +6,16 @@ import Return
 import Return exposing (Return)
 
 import Util.ElmExtra as E
+import Pallanguzhi.Board exposing (Board)
 import Pallanguzhi.Board as Board
 import Pallanguzhi.Hand exposing (Hand)
 import Pallanguzhi.Hand as Hand
 
 -- TODO: model rounds
 type Model
-  = Awaiting Board.Player Board.Model
-  | Seeding Hand Board.Model
-  | EndGame Board.Model
+  = Awaiting Board.Player Board
+  | Seeding Hand Board
+  | EndGame Board
 
 type Msg 
   = Reset
@@ -26,7 +27,7 @@ type alias Error = String
 init : Model
 init = Awaiting Board.A Board.init 
 
-getBoard : Model -> Board.Model
+getBoard : Model -> Board
 getBoard model =
   case model of 
     Awaiting _ board -> board
@@ -62,7 +63,7 @@ returnNext model =
     _ ->
       Return.singleton model
 
-moveHand : Hand -> Board.Model -> Model
+moveHand : Hand -> Board -> Model
 moveHand hand board =
   let 
     opponent = Board.opponentOf hand.player
@@ -78,7 +79,7 @@ moveHand hand board =
           -- This should start next round.
           EndGame board_
 
-playerHasSeeds : Board.Player -> Board.Model -> Bool
+playerHasSeeds : Board.Player -> Board -> Bool
 playerHasSeeds player board =
   board
   |> Board.rowOf player

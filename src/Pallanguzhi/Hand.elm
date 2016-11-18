@@ -1,5 +1,6 @@
 module Pallanguzhi.Hand exposing (..)
 
+import Pallanguzhi.Board exposing (Board)
 import Pallanguzhi.Board as Board
 
 type alias Hand = 
@@ -8,7 +9,7 @@ type alias Hand =
   , loc : Board.PitLocation
   }
 
-new : Board.Player -> Board.PitLocation -> Board.Model -> Result String Hand
+new : Board.Player -> Board.PitLocation -> Board -> Result String Hand
 new player loc board =
   let 
     pit = 
@@ -26,7 +27,7 @@ new player loc board =
     else
       Ok hand
 
-move : Hand -> Board.Model -> (Maybe Hand, Board.Model)
+move : Hand -> Board -> (Maybe Hand, Board)
 move hand board =
   let 
     seedsBelow =
@@ -74,7 +75,7 @@ move hand board =
         |> keepSeeding
 
 
-capture : (Hand, Board.Model) -> (Hand, Board.Model)
+capture : (Hand, Board) -> (Hand, Board)
 capture (hand, board) =
   let 
     seeds = Board.lookupSeeds hand.loc board
@@ -85,7 +86,7 @@ capture (hand, board) =
       |> Board.store hand.player seeds
     )
 
-lift : (Hand, Board.Model) -> (Hand, Board.Model)
+lift : (Hand, Board) -> (Hand, Board)
 lift (hand, board) =
   let 
     seeds = Board.lookupSeeds hand.loc board
@@ -94,13 +95,13 @@ lift (hand, board) =
     , Board.clear hand.loc board
     )
 
-sow : (Hand, Board.Model) -> (Hand, Board.Model)
+sow : (Hand, Board) -> (Hand, Board)
 sow (hand, board) =
   ( { hand | seeds = hand.seeds - 1 }
   , Board.inc hand.loc board
   )
 
-advance : (Hand, Board.Model) -> (Hand, Board.Model)
+advance : (Hand, Board) -> (Hand, Board)
 advance (hand, board) =
   let 
     newHand = { hand | loc = Board.next hand.loc }
