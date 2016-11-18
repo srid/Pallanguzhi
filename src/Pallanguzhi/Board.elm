@@ -52,9 +52,9 @@ casePlayer player a b =
 -- Return the pit row for this player
 rowOf : Player -> Board -> List Pit
 rowOf player board =
-  case player of
-    A -> board.pits |> Array.toList |> List.take pitsPerPlayer
-    B -> board.pits |> Array.toList |> List.drop pitsPerPlayer
+  casePlayer player 
+    (board.pits |> Array.toList |> List.take pitsPerPlayer)
+    (board.pits |> Array.toList |> List.drop pitsPerPlayer)
 
 mapRowOf : Player
         -> (PitLocation -> Pit -> b)
@@ -65,10 +65,7 @@ mapRowOf player f board =
   |> List.indexedMap (f << ((,) player))
 
 displayOrder : Player -> List a -> List a
-displayOrder player =
-  case player of 
-    A -> identity
-    B -> List.reverse
+displayOrder player = casePlayer player identity List.reverse
 
 lookup : PitLocation -> Board -> Pit
 lookup loc board = 
@@ -109,18 +106,12 @@ clear loc board =
 
 store : Player -> Int -> Board -> Board
 store player seeds board =
-  case player of
-    A -> { board | storeA = board.storeA + seeds }
-    B -> { board | storeB = board.storeB + seeds }
+  casePlayer player 
+    { board | storeA = board.storeA + seeds }
+    { board | storeB = board.storeB + seeds }
 
 storeFor : Player -> Board ->Int 
-storeFor player board =
-  case player of
-    A -> board.storeA
-    B -> board.storeB
+storeFor player = casePlayer player .storeA .storeB
 
 opponentOf : Player -> Player
-opponentOf player =
-  case player of 
-    A -> B
-    B -> A
+opponentOf player = casePlayer player B A
