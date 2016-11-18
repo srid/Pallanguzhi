@@ -6,8 +6,8 @@ import Maybe
 import Debug
 
 type Player = A | B 
-type alias PitLocation = Int
 type alias Pit = { player : Player, seeds : Int}
+type alias PitLocation = (Player, Int)
 
 type alias Board =
   { pits : Array Pit
@@ -38,6 +38,17 @@ init =
     , storeB = 0
     }
 
+-- Turn PitLocation into array index.
+locToIdx : PitLocation -> Int
+locToIdx (player, idx) = 
+  casePlayer player idx (idx + pitsPerPlayer)
+
+casePlayer : Player -> a -> a -> a
+casePlayer player a b =
+  case player of 
+    A -> a
+    B -> b
+
 -- Return the pit row for this player
 rowOf : Player -> Board -> List Pit
 rowOf player board =
@@ -51,7 +62,7 @@ mapRowOf : Player
         -> List b
 mapRowOf player f board =
   rowOf player board
-  |> List.indexedMap f
+  |> List.indexedMap (f << ((,) player))
 
 displayOrder : Player -> List a -> List a
 displayOrder player =
@@ -61,7 +72,7 @@ displayOrder player =
 
 lookup : PitLocation -> Board -> Pit
 lookup loc board = 
-  case Array.get loc board.pits of
+  case Array.get (locToIdx loc) board.pits of
     Just pit -> 
       pit
     Nothing  -> 
@@ -72,11 +83,11 @@ lookupSeeds : PitLocation -> Board -> Int
 lookupSeeds loc = lookup loc >> .seeds
 
 next : PitLocation -> PitLocation
-next loc =
-  let 
-    total = 2 * pitsPerPlayer 
-  in 
-    (loc + 1) % total
+next (player, idx) =
+  if idx == pitsPerPlayer - 1 then
+    (opponentOf player, 0)
+  else
+    (player, idx + 1)
 
 update : PitLocation -> (Int -> Int) -> Board -> Board
 update loc f board =
@@ -84,7 +95,7 @@ update loc f board =
     pit = 
       lookup loc board
     pits = 
-      Array.set loc { pit | seeds = f pit.seeds } board.pits
+      Array.set (locToIdx loc) { pit | seeds = f pit.seeds } board.pits
   in
     { board | pits = pits }
 
@@ -113,10 +124,3 @@ opponentOf player =
   case player of 
     A -> B
     B -> A
-
-locFor : Player -> PitLocation -> PitLocation
-locFor player loc =
-  case player of
-    A -> loc
-    B -> pitsPerPlayer + loc
-
