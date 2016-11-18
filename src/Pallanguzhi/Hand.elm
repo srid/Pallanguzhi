@@ -74,7 +74,6 @@ move hand board =
         |> advance
         |> keepSeeding
 
-
 capture : (Hand, Board) -> (Hand, Board)
 capture (hand, board) =
   let 

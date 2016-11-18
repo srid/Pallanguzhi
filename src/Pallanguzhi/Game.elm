@@ -19,7 +19,7 @@ type Model
 
 type Msg 
   = Reset
-  | Play Board.Player Board.PitLocation
+  | Play Board.PitLocation
   | Continue
 
 type alias Error = String
@@ -39,9 +39,9 @@ transition msg model =
   case (msg, model) of
     (Reset, _) ->
       Ok init
-    (Play player loc, Awaiting player_ board) ->
+    (Play loc, Awaiting player_ board) ->
       board
-      |> Hand.new player_ (Board.locFor player loc) 
+      |> Hand.new player_ loc
       |> Result.map (flip Seeding <| board)
     (Continue, Seeding hand board) ->
       Ok <| moveHand hand board
@@ -58,7 +58,7 @@ returnNext : Model -> Return Msg Model
 returnNext model =
   case model of
     Seeding _ _ -> 
-      E.sendAfter (Time.millisecond * 5) Continue
+      E.sendAfter (Time.millisecond * 50) Continue
       |> Return.return model
     _ ->
       Return.singleton model

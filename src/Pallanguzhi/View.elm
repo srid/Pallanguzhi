@@ -13,11 +13,9 @@ import Pallanguzhi.Hand exposing (Hand)
 import Pallanguzhi.Board as Board
 
 type alias PitClickF a
-  =  Board.Player
-  -> Board.PitLocation
+  =  Board.PitLocation
   -> a
 
--- FIXME: replace PitLocation (optional +7) confusion with Board.Cursor
 type alias Config = 
   { focusPit    : Maybe Board.PitLocation
   , focusPlayer : Maybe Board.Player
@@ -27,10 +25,7 @@ defaultConfig : Config
 defaultConfig = { focusPit = Nothing, focusPlayer = Nothing }
 
 focussingPit : Config -> Board.PitLocation -> Bool
-focussingPit config loc =
-  case config.focusPit of
-    Just focusPit -> focusPit == loc
-    Nothing -> False
+focussingPit config loc = config.focusPit == Just loc
 
 focussingPlayer : Config -> Board.Player -> Bool
 focussingPlayer config player =
@@ -133,9 +128,9 @@ viewPit f model player loc pit =
     radius = 
       12
     color = 
-      if focussingPit config (Board.locFor player loc) then "orange" else "#60B5CC"
+      if focussingPit config loc then "orange" else "#60B5CC"
     handleClick =
-      f player loc
+      f loc
       |> onClick
     circle = 
       D.circle [S.fill color, handleClick] radius
