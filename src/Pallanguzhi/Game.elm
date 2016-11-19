@@ -58,7 +58,7 @@ returnNext : Model -> Return Msg Model
 returnNext model =
   case model of
     Seeding _ _ -> 
-      E.sendAfter (Time.millisecond * 50) Continue
+      E.sendAfter (Time.millisecond * 300) Continue
       |> Return.return model
     _ ->
       Return.singleton model

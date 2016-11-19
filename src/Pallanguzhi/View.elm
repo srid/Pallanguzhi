@@ -2,6 +2,7 @@ module Pallanguzhi.View exposing (view)
 
 import Maybe
 import Html exposing (..)
+import Html.Attributes as A
 
 import Util.Diagram as D
 import Svg exposing (svg)
@@ -11,10 +12,6 @@ import Svg.Events exposing (onClick)
 import Pallanguzhi.Game as Game
 import Pallanguzhi.Hand exposing (Hand)
 import Pallanguzhi.Board as Board
-
-type alias PitClickF a
-  =  Board.PitLocation
-  -> a
 
 type alias Config = 
   { focusPit    : Maybe Board.PitLocation
@@ -50,8 +47,9 @@ view model error =
     boardHtml = viewBoard model
     stateHtml = viewState model
     errorHtml = viewError error
+    soundHtml = viewSound model
   in
-    div [] [ boardHtml, stateHtml, errorHtml ]
+    div [] [ boardHtml, stateHtml, errorHtml, soundHtml ]
 
 viewBoard : Game.Model -> Html Game.Msg
 viewBoard model =
@@ -78,6 +76,19 @@ viewBoard model =
       |> D.vfold 5
   in 
     viewDiagram boardUI
+
+viewSound : Game.Model -> Html Game.Msg
+viewSound model =
+  case model of 
+    Game.Seeding hand _ ->
+      if hand.seeds == 0 then
+        div [A.id "x" ]
+          [ audio [A.src "/data/coin.wav", A.loop False, A.autoplay True ] []
+          ]
+      else
+        div [] []
+    _ ->
+      div [] []
 
 viewDiagram : D.Diagram a -> Html a
 viewDiagram diagram =
@@ -114,7 +125,7 @@ viewError errorMaybe =
     Just e -> 
       div [] [ text <| "Error: " ++ e ]
 
-viewPit : PitClickF a 
+viewPit : (Board.PitLocation -> a)
        -> Game.Model
        -> Board.Player 
        -> Board.PitLocation 
