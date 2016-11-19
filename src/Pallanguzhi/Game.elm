@@ -67,7 +67,7 @@ moveHand : Hand -> Board -> Model
 moveHand hand board =
   let 
     opponent = Board.opponentOf hand.player
-    (hand_, board_) = Hand.move hand board
+    (hand_, board_) = Hand.move (hand, board)
   in
     if Hand.shouldEndTurn hand_ then
       if playerHasSeeds opponent board_ then

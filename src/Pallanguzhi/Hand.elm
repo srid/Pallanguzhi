@@ -18,6 +18,8 @@ type State
   | CapturePasu
   | SowAndContinue
 
+type alias TransformF = (Hand, Board) -> (Hand, Board)
+
 
 new : Board.Player -> Board.PitLocation -> Board -> Result String Hand
 new player loc board =
@@ -56,7 +58,7 @@ state hand board =
         CaptureAndEndTurn
       (0, 0, s, _) -> -- Capture and continue.
         CaptureAndContinue
-      (0, s, _, _) -> -- Continue digging.
+      (0, s, _, _) -> -- Lift seeds
         Lift
       (s, 3, _, _) -> -- Pasu; capture!
         CapturePasu
@@ -64,8 +66,8 @@ state hand board =
         SowAndContinue
 
 
-move : Hand -> Board -> (Hand, Board)
-move hand board =
+move : TransformF
+move (hand, board) =
   let 
     st = state hand board
     f = transitions (hand, board) st
@@ -75,7 +77,7 @@ move hand board =
     |> f
 
 
-transitions : (Hand, Board) -> State -> ((Hand, Board) -> (Hand, Board))
+transitions : (Hand, Board) -> State -> TransformF
 transitions (hand, board) st =
   case st of 
     EndTurn -> 
@@ -87,23 +89,30 @@ transitions (hand, board) st =
     CaptureAndContinue -> 
       advance >> capture >> advance 
     CapturePasu ->
+      -- XXX: shoud make this two step? So user can see the '4' 
+      -- before it vanishes.
       sow >> capture >> advance
     SowAndContinue ->  
       sow >> advance
 
 
-shouldEndTurn : Hand -> Bool
-shouldEndTurn hand =
-  case hand.lastState of 
-    Just EndTurn -> True
-    Just CaptureAndEndTurn -> True
-    _ -> False
+wasState : List State -> Hand -> Bool
+wasState states hand =
+  hand.lastState
+  |> Maybe.map (\st -> List.any ((==) st) states)
+  |> Maybe.withDefault False
 
-setState : State -> (Hand, Board) -> (Hand, Board)
+shouldEndTurn : Hand -> Bool
+shouldEndTurn = wasState [EndTurn, CaptureAndEndTurn]
+
+didCapture : Hand -> Bool
+didCapture = wasState [CaptureAndEndTurn, CaptureAndContinue, CapturePasu]
+
+setState : State -> TransformF
 setState st (hand, board) = 
   ({hand | lastState = Just st}, board)
   
-capture : (Hand, Board) -> (Hand, Board)
+capture : TransformF
 capture (hand, board) =
   let 
     seeds = Board.lookupSeeds hand.loc board
@@ -114,7 +123,7 @@ capture (hand, board) =
       |> Board.store hand.player seeds
     )
 
-lift : (Hand, Board) -> (Hand, Board)
+lift : TransformF
 lift (hand, board) =
   let 
     seeds = Board.lookupSeeds hand.loc board
@@ -123,13 +132,13 @@ lift (hand, board) =
     , Board.clear hand.loc board
     )
 
-sow : (Hand, Board) -> (Hand, Board)
+sow : TransformF
 sow (hand, board) =
   ( { hand | seeds = hand.seeds - 1 }
   , Board.inc hand.loc board
   )
 
-advance : (Hand, Board) -> (Hand, Board)
+advance : TransformF
 advance (hand, board) =
   let 
     newHand = { hand | loc = Board.next hand.loc }

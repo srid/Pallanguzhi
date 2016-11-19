@@ -11,6 +11,7 @@ import Svg.Events exposing (onClick)
 
 import Pallanguzhi.Game as Game
 import Pallanguzhi.Hand exposing (Hand)
+import Pallanguzhi.Hand as Hand
 import Pallanguzhi.Board as Board
 
 type alias Config = 
@@ -81,7 +82,7 @@ viewSound : Game.Model -> Html Game.Msg
 viewSound model =
   case model of 
     Game.Seeding hand _ ->
-      if hand.seeds == 0 then
+      if Hand.didCapture hand then
         div [A.id "x" ]
           [ audio [A.src "/data/coin.wav", A.loop False, A.autoplay True ] []
           ]
