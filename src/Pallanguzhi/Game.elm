@@ -67,17 +67,15 @@ moveHand : Hand -> Board -> Model
 moveHand hand board =
   let 
     opponent = Board.opponentOf hand.player
-    (handMaybe, board_) = Hand.move hand board
+    (hand_, board_) = Hand.move hand board
   in
-    case handMaybe of 
-      Just hand_ ->
-        Seeding hand_ board_
-      Nothing ->
-        if playerHasSeeds opponent board_ then
-          Awaiting opponent board_
-        else
-          -- This should start next round.
-          EndGame board_
+    if Hand.shouldEndTurn hand_ then
+      if playerHasSeeds opponent board_ then
+        Awaiting opponent board_
+      else
+        EndGame board_
+    else
+      Seeding hand_ board_
 
 playerHasSeeds : Board.Player -> Board -> Bool
 playerHasSeeds player board =

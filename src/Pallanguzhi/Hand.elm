@@ -64,7 +64,7 @@ state hand board =
         SowAndContinue
 
 
-move : Hand -> Board -> (Maybe Hand, Board)
+move : Hand -> Board -> (Hand, Board)
 move hand board =
   let 
     st = state hand board
@@ -73,23 +73,31 @@ move hand board =
     (hand, board)
     |> setState st
     |> f
-    
 
-transitions : (Hand, Board) -> State -> ((Hand, Board) -> (Maybe Hand, Board))
+
+transitions : (Hand, Board) -> State -> ((Hand, Board) -> (Hand, Board))
 transitions (hand, board) st =
   case st of 
     EndTurn -> 
-      end
+      identity
     CaptureAndEndTurn -> 
-      advance >> capture >> end
+      advance >> capture 
     Lift ->
-      lift >> advance >> continue
+      lift >> advance
     CaptureAndContinue -> 
-      advance >> capture >> advance >> continue
+      advance >> capture >> advance 
     CapturePasu ->
-      sow >> capture >> advance >> continue
+      sow >> capture >> advance
     SowAndContinue ->  
-      sow >> advance >> continue 
+      sow >> advance
+
+
+shouldEndTurn : Hand -> Bool
+shouldEndTurn hand =
+  case hand.lastState of 
+    Just EndTurn -> True
+    Just CaptureAndEndTurn -> True
+    _ -> False
 
 setState : State -> (Hand, Board) -> (Hand, Board)
 setState st (hand, board) = 
@@ -127,11 +135,3 @@ advance (hand, board) =
     newHand = { hand | loc = Board.next hand.loc }
   in
     (newHand, board)
-
-continue : (Hand, Board) -> (Maybe Hand, Board)
-continue (hand, board) =
-  (Just hand, board)
-  
-end : (Hand, Board) -> (Maybe Hand, Board)
-end (hand, board) =
-  (Nothing, board)
