@@ -7,7 +7,17 @@ type alias Hand =
   { player : Board.Player 
   , seeds : Int
   , loc : Board.PitLocation
+  , lastState : Maybe State
   }
+
+type State
+  = EndTurn
+  | CaptureAndEndTurn
+  | CaptureAndContinue
+  | Lift
+  | CapturePasu
+  | SowAndContinue
+
 
 new : Board.Player -> Board.PitLocation -> Board -> Result String Hand
 new player loc board =
@@ -18,6 +28,7 @@ new player loc board =
       { player = pit.player
       , seeds = 0
       , loc = loc 
+      , lastState = Nothing
       }
   in 
     if player /= pit.player then
@@ -27,8 +38,9 @@ new player loc board =
     else
       Ok hand
 
-move : Hand -> Board -> (Maybe Hand, Board)
-move hand board =
+
+state : Hand -> Board -> State
+state hand board =
   let 
     seedsBelow =
       Board.lookupSeeds hand.loc board
@@ -36,44 +48,53 @@ move hand board =
       Board.lookupSeeds (Board.next hand.loc) board
     seedsNextNext = 
       Board.lookupSeeds (Board.next <| Board.next hand.loc) board
-    keepSeeding (hand, board) =
-      (Just hand, board)
-    awaitForOpponent (hand, board) =
-      (Nothing, board)
   in
     case (hand.seeds, seedsBelow, seedsNext, seedsNextNext) of
       (0, 0, 0, _) -> -- No hand, next two pits empty. End turn.
-        -- TODO: determine EndGame
-        (hand, board)
-        |> awaitForOpponent
+        EndTurn
       (0, 0, s, 0) -> -- Capture and end turn.
-        (hand, board)
-        |> advance 
-        |> capture
-        |> awaitForOpponent
+        CaptureAndEndTurn
       (0, 0, s, _) -> -- Capture and continue.
-        (hand, board)
-        |> advance 
-        |> capture
-        |> advance 
-        |> keepSeeding
+        CaptureAndContinue
       (0, s, _, _) -> -- Continue digging.
-        (hand, board)
-        |> lift
-        |> advance
-        |> keepSeeding
+        Lift
       (s, 3, _, _) -> -- Pasu; capture!
-        (hand, board)
-        |> sow  -- Sow 1 before capturing the 6 seeds
-        |> capture
-        |> advance
-        |> keepSeeding
+        CapturePasu
       (s, _, _, _) -> -- Sow 1 seed and continue digging.
-        (hand, board)
-        |> sow
-        |> advance
-        |> keepSeeding
+        SowAndContinue
 
+
+move : Hand -> Board -> (Maybe Hand, Board)
+move hand board =
+  let 
+    st = state hand board
+    f = transitions (hand, board) st
+  in 
+    (hand, board)
+    |> setState st
+    |> f
+    
+
+transitions : (Hand, Board) -> State -> ((Hand, Board) -> (Maybe Hand, Board))
+transitions (hand, board) st =
+  case st of 
+    EndTurn -> 
+      end
+    CaptureAndEndTurn -> 
+      advance >> capture >> end
+    Lift ->
+      lift >> advance >> continue
+    CaptureAndContinue -> 
+      advance >> capture >> advance >> continue
+    CapturePasu ->
+      sow >> capture >> advance >> continue
+    SowAndContinue ->  
+      sow >> advance >> continue 
+
+setState : State -> (Hand, Board) -> (Hand, Board)
+setState st (hand, board) = 
+  ({hand | lastState = Just st}, board)
+  
 capture : (Hand, Board) -> (Hand, Board)
 capture (hand, board) =
   let 
@@ -106,3 +127,11 @@ advance (hand, board) =
     newHand = { hand | loc = Board.next hand.loc }
   in
     (newHand, board)
+
+continue : (Hand, Board) -> (Maybe Hand, Board)
+continue (hand, board) =
+  (Just hand, board)
+  
+end : (Hand, Board) -> (Maybe Hand, Board)
+end (hand, board) =
+  (Nothing, board)
