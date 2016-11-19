@@ -10,7 +10,7 @@ import Svg.Attributes as S
 import Svg.Events exposing (onClick)
 
 import Pallanguzhi.Game as Game
-import Pallanguzhi.Hand exposing (Hand)
+import Pallanguzhi.Hand exposing (Hand(Hand))
 import Pallanguzhi.Hand as Hand
 import Pallanguzhi.Board as Board
 
@@ -36,7 +36,7 @@ configFor model =
   case model of 
     Game.Awaiting player board ->
       { defaultConfig | focusPlayer = Just player }
-    Game.Seeding hand board ->
+    Game.Seeding (Hand hand) board ->
       { defaultConfig | focusPlayer = Just hand.player
                       , focusPit = Just hand.loc }
     Game.EndGame board ->
@@ -111,7 +111,7 @@ viewState state =
       div [] [ text <| "Game ended" ]
 
 viewHand : Hand -> Html Game.Msg
-viewHand hand =
+viewHand (Hand hand) =
   div [] 
     [ b [] [ text <| "Player: " ++ toString hand.player ]
     , span [] [ text <| ", Seeds: " ++ toString hand.seeds]

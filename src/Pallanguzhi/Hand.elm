@@ -3,11 +3,14 @@ module Pallanguzhi.Hand exposing (..)
 import Pallanguzhi.Board exposing (Board)
 import Pallanguzhi.Board as Board
 
-type alias Hand = 
+type Hand = Hand HandR
+
+type alias HandR =
   { player : Board.Player 
   , seeds : Int
   , loc : Board.PitLocation
   , lastState : Maybe State
+  , transitionQueue : List TransformF
   }
 
 type State
@@ -20,17 +23,20 @@ type State
 
 type alias TransformF = (Hand, Board) -> (Hand, Board)
 
+getHand : Hand -> HandR
+getHand (Hand h) = h
 
 new : Board.Player -> Board.PitLocation -> Board -> Result String Hand
 new player loc board =
   let 
     pit = 
       Board.lookup loc board
-    hand =
+    hand = Hand
       { player = pit.player
       , seeds = 0
       , loc = loc 
       , lastState = Nothing
+      , transitionQueue = []
       }
   in 
     if player /= pit.player then
@@ -42,7 +48,7 @@ new player loc board =
 
 
 state : Hand -> Board -> State
-state hand board =
+state (Hand hand) board =
   let 
     seedsBelow =
       Board.lookupSeeds hand.loc board
@@ -66,81 +72,100 @@ state hand board =
         SowAndContinue
 
 
-move : TransformF
-move (hand, board) =
+enqueueTransitions : TransformF
+enqueueTransitions (hand, board) =
   let 
-    st = state hand board
-    f = transitions (hand, board) st
+    st = 
+      state hand board
+    tl = 
+      getTransitions (hand, board) st
+    h = 
+      getHand hand
+    newHand =
+      Hand { h | lastState = Just st, transitionQueue = tl }
   in 
-    (hand, board)
-    |> setState st
-    |> f
+    (newHand, board)
 
+setTransitions : List TransformF -> TransformF 
+setTransitions tl (Hand hand, board) =
+  (Hand { hand | transitionQueue = tl }, board)
 
-transitions : (Hand, Board) -> State -> TransformF
-transitions (hand, board) st =
+runHand : TransformF
+runHand (hand, board) =
+  (hand, board)
+  |> case (getHand hand).transitionQueue of 
+    f :: xs 
+      -> setTransitions xs >> f
+    _    
+      -> enqueueTransitions >> runHand
+
+getTransitions : (Hand, Board) -> State -> List TransformF
+getTransitions (hand, board) st =
   case st of 
     EndTurn -> 
-      identity
+      [identity]
     CaptureAndEndTurn -> 
-      advance >> capture 
+      [advance, capture]
     Lift ->
-      lift >> advance
+      [lift, advance]
     CaptureAndContinue -> 
-      advance >> capture >> advance 
+      [advance, capture, advance]
     CapturePasu ->
       -- XXX: shoud make this two step? So user can see the '4' 
       -- before it vanishes.
-      sow >> capture >> advance
+      [sow, capture, advance]
     SowAndContinue ->  
-      sow >> advance
+      [sow, advance]
 
 
 wasState : List State -> Hand -> Bool
 wasState states hand =
-  hand.lastState
+  (getHand hand).lastState
   |> Maybe.map (\st -> List.any ((==) st) states)
   |> Maybe.withDefault False
 
 shouldEndTurn : Hand -> Bool
-shouldEndTurn = wasState [EndTurn, CaptureAndEndTurn]
+shouldEndTurn hand = 
+  (wasState [EndTurn, CaptureAndEndTurn] hand) 
+  && List.isEmpty (getHand hand).transitionQueue
 
+-- XXX: update
 didCapture : Hand -> Bool
 didCapture = wasState [CaptureAndEndTurn, CaptureAndContinue, CapturePasu]
 
 setState : State -> TransformF
-setState st (hand, board) = 
-  ({hand | lastState = Just st}, board)
+setState st (Hand hand, board) = 
+  (Hand {hand | lastState = Just st}, board)
   
 capture : TransformF
-capture (hand, board) =
+capture (Hand hand, board) =
   let 
     seeds = Board.lookupSeeds hand.loc board
   in
-    ( hand
+    ( Hand hand
     , board
       |> Board.clear hand.loc
       |> Board.store hand.player seeds
     )
 
 lift : TransformF
-lift (hand, board) =
+lift (Hand hand, board) =
   let 
     seeds = Board.lookupSeeds hand.loc board
   in 
-    ( { hand | seeds = seeds }
+    ( Hand { hand | seeds = seeds }
     , Board.clear hand.loc board
     )
 
 sow : TransformF
-sow (hand, board) =
-  ( { hand | seeds = hand.seeds - 1 }
+sow (Hand hand, board) =
+  ( Hand { hand | seeds = hand.seeds - 1 }
   , Board.inc hand.loc board
   )
 
 advance : TransformF
-advance (hand, board) =
+advance (Hand hand, board) =
   let 
     newHand = { hand | loc = Board.next hand.loc }
   in
-    (newHand, board)
+    (Hand newHand, board)
