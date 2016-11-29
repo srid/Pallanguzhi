@@ -55,11 +55,28 @@ init =
   , storeB: 0
   }
 
+set :: PitRef -> (Cell -> Cell) -> State -> State 
+set pitRef f board =
+   board { cells = cells' }
+   where value = f $ lookup pitRef board
+         cells' = FM.set (toRef pitRef) value board.cells
+
+clear :: PitRef -> State -> State 
+clear pitRef = set pitRef (const 0) 
+
+store :: Player -> Cell -> State -> State 
+store A seeds state = state { storeA = state.storeA + seeds }
+store B seeds state = state { storeA = state.storeB + seeds }
+
+-- Update
+
 update :: Action -> State -> State
 update Reset state = 
   init
 update (Move player idx) state = 
   state
+
+-- View 
 
 view :: State -> Html Action
 view state =
