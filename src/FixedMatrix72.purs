@@ -2,7 +2,7 @@ module App.FixedMatrix72 where
 
 import Matrix as Matrix
 import Data.Maybe (fromJust)
-import Matrix (Matrix, set)
+import Matrix (Matrix)
 import Partial.Unsafe (unsafePartial)
 import Prelude (($))
 
@@ -32,10 +32,10 @@ lookup (Ref ref) (FixedMatrix72 m) =
   unsafePartial fromJust v 
   where v = Matrix.get (rowToInt ref.row) ref.idx m
   
-set :: forall a. Ref -> a -> FixedMatrix72 a -> FixedMatrix72 a
-set (Ref ref) value (FixedMatrix72 m) =
+modify :: forall a. Ref -> (a -> a) -> FixedMatrix72 a -> FixedMatrix72 a
+modify (Ref ref) f (FixedMatrix72 m) =
   FixedMatrix72 $ unsafePartial fromJust v
-  where v = Matrix.set (rowToInt ref.row) ref.idx value m
+  where v = Matrix.modify (rowToInt ref.row) ref.idx f m
 
 rowToInt :: Row -> Int 
 rowToInt A = 0

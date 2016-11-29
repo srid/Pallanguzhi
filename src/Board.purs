@@ -1,6 +1,7 @@
 module App.Board where
 
 import App.FixedMatrix72 as FM
+import App.FixedMatrix72 (Ref(Ref), Row(A, B))
 import Data.Array (mapWithIndex)
 import Data.Function ((#))
 import Prelude ((+), bind, const, show, ($), (<<<))
@@ -21,32 +22,23 @@ type State =
   , storeB :: Int
   }
 
-data Player = A | B
+type Player = FM.Row
 
-newtype PitRef = PitRef { player :: Player, idx :: Int }
-
-toRow :: Player -> FM.Row 
-toRow A = FM.A
-toRow B = FM.B
-
-toRef :: PitRef -> FM.Ref 
-toRef (PitRef { player, idx }) = FM.makeRef (toRow player) idx
+type PitRef = Ref
 
 makeRef :: Player -> Int -> PitRef 
-makeRef player idx = PitRef { player, idx }
+makeRef = FM.makeRef 
 
 nextRef :: PitRef -> PitRef 
-nextRef (PitRef r) = PitRef (f r)
-  where f {player: A, idx: 6} = {player: B, idx: 6}
-        f {player: B, idx: 0} = {player: A, idx: 0}
-        f r' = r' {idx = r.idx + 1}
+nextRef (Ref { row: A, idx: 6 }) = Ref { row: B, idx: 6 }
+nextRef (Ref { row: B, idx: 0 }) = Ref { row: A, idx: 0 }
+nextRef (Ref r) = Ref $ r { idx = r.idx + 1 }
 
 lookup :: PitRef -> State -> Cell 
-lookup pitRef board =
-  FM.lookup (toRef pitRef) board.cells
+lookup ref board = FM.lookup ref board.cells
 
 playerCells :: Player -> State -> Array Cell
-playerCells player = FM.getRow (toRow player) <<< _.cells
+playerCells player = FM.getRow player <<< _.cells
 
 init :: State
 init =
@@ -55,14 +47,12 @@ init =
   , storeB: 0
   }
 
-set :: PitRef -> (Cell -> Cell) -> State -> State 
-set pitRef f board =
-   board { cells = cells' }
-   where value = f $ lookup pitRef board
-         cells' = FM.set (toRef pitRef) value board.cells
+modify :: PitRef -> (Cell -> Cell) -> State -> State 
+modify ref f board = board { cells = cells' }
+   where cells' = FM.modify ref f board.cells
 
 clear :: PitRef -> State -> State 
-clear pitRef = set pitRef (const 0) 
+clear pitRef = modify pitRef (const 0) 
 
 store :: Player -> Cell -> State -> State 
 store A seeds state = state { storeA = state.storeA + seeds }

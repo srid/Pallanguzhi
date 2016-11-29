@@ -4,7 +4,7 @@ import App.Board as Board
 import App.NotFound as NotFound
 import App.Routes (Route(Home, NotFound))
 import Prelude ((<$>))
-import Pux.Html (Html, div, h1, p, text)
+import Pux.Html (Html, div, h1, text)
 
 data Action
   = BoardAction (Board.Action)
