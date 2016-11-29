@@ -15,5 +15,5 @@
   },
   "devDependencies": {
     "purescript-psci-support": "^2.0.0"
-  },
+  }
 }
