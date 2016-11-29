@@ -1,17 +1,17 @@
 module App.Board where
 
+import Matrix as Matrix
+import Data.Array (mapWithIndex)
 import Data.Function ((#))
 import Data.Maybe (fromJust)
 import Matrix (Matrix)
-import Matrix as Matrix
 import Partial.Unsafe (unsafePartial)
-import Prelude (bind, map, show, ($), (<<<))
-import Pux.CSS (display, inline, em, padding, rgb, backgroundColor, style)
-import Pux.Html (Html, div, text)
-import Pux.Html.Attributes (value)
-import Pux.Html.Events (MouseEvent, onClick)
+import Prelude (bind, map, show, const, ($), (<<<))
+import Pux.CSS (backgroundColor, boxSizing, borderBox, display, em, inline, padding, rgb, style)
+import Pux.Html (Html, div, hr, text)
+import Pux.Html.Events (onClick)
 
-data Action = Reset | Move MouseEvent
+data Action = Reset | Move Player Int
 
 type Cell = Int
 
@@ -36,22 +36,25 @@ init =
 
 update :: Action -> State -> State
 update Reset state = init
-update (Move event) state = state
+update (Move player idx) state = state
 
 view :: State -> Html Action
 view state =
   div []
-  [ div [] $ map viewCell $ playerACells state
-  , div [] [ text "." ] -- XXX: remove this ugly display hack
-  , div [] $ map viewCell $ playerBCells state
+  [ div [] $ mapWithIndex (viewCell <<< Move A) (playerACells state)
+  , hr [] [] -- XXX: remove this ugly display hack
+  , div [] $ mapWithIndex (viewCell <<< Move B) (playerBCells state)
   ]
 
-viewCell :: Cell -> Html Action
-viewCell count =
-  div [st, value "Sample", onClick Move] [ text $ show count ]
+viewCell :: Action -> Cell -> Html Action
+viewCell action count =
+  div [design, onClick (const action)] [ text content ]
   where
-    st = style $ do
+    content = show count
+    design = style $ do
       display inline
       backgroundColor (rgb 200 100 0)
       squarePadding (1.0 # em)
-    squarePadding sz = padding sz sz sz sz
+      boxSizing borderBox
+      where 
+        squarePadding sz = padding sz sz sz sz
