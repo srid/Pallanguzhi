@@ -17,12 +17,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/HappyAndHarmless/Pallanguzhi.git"
+    "url": "git://github.com/srid/Pallanguzhi.git"
   },
-  "author": "Alexander C. Mingoia",
+  "author": "Sridhar Ratnakumar",
   "license": "BSD-3-Clause",
   "bugs": {
-    "url": "https://github.com/HappyAndHarmless/Pallanguzhi"
+    "url": "https://github.com/srid/Pallanguzhi"
   },
   "dependencies": {
     "bower": "^1.7.9",

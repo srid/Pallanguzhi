@@ -5,8 +5,6 @@ A work-in-progress Tamil dice game in PureScript.
 ## Installation
 
 ```sh
-git clone git://github.com/alexmingoia/pux-starter-app.git example
-cd example
 npm install
 npm start
 ```

@@ -1,8 +1,8 @@
 {
   "name": "pallanguzhi",
-  "homepage": "https://github.com/HappyAndHarmless/pallanguzhi",
+  "homepage": "https://github.com/srid/Pallanguzhi",
   "authors": [
-    "Sridhar Ratnakumar <happyandharmless@icloud.com>"
+    "Sridhar Ratnakumar <srid@srid.ca>"
   ],
   "description": "A Tamil dice game.",
   "main": "support/index.js",
@@ -10,9 +10,10 @@
   "dependencies": {
     "purescript-pux": "^7.0.0",
     "purescript-pux-devtool": "^4.1.0",
-    "purescript-matrices": "^2.0.0"
+    "purescript-matrices": "^2.0.0",
+    "purescript-css": "^2.0.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^2.0.0"
-  }
+  },
 }
