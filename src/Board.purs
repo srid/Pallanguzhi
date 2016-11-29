@@ -1,50 +1,55 @@
 module App.Board where
 
-import Matrix as Matrix
 import Data.Array (mapWithIndex)
 import Data.Function ((#))
-import Data.Maybe (fromJust)
-import Matrix (Matrix)
-import Partial.Unsafe (unsafePartial)
-import Prelude (bind, map, show, const, ($), (<<<))
+import Prelude (bind, const, show, ($), (<<<))
 import Pux.CSS (backgroundColor, boxSizing, borderBox, display, em, inline, padding, rgb, style)
 import Pux.Html (Html, div, hr, text)
 import Pux.Html.Events (onClick)
+import App.FixedMatrix72 as FM
 
-data Action = Reset | Move Player Int
+data Action 
+  = Reset 
+  | Move Player Int
 
 type Cell = Int
 
 type State =
-  { cells :: Matrix Cell
+  { cells :: FM.FixedMatrix72 Cell
   , nextMove :: Player
   }
 
 data Player = A | B
 
-playerACells :: State -> Array Cell
-playerACells = unsafePartial fromJust <<< Matrix.getRow 0 <<< (\r -> r.cells)
+toRow :: Player -> FM.Row 
+toRow A = FM.A
+toRow B = FM.B
 
-playerBCells :: State -> Array Cell
-playerBCells = unsafePartial fromJust <<< Matrix.getRow 1 <<< (\r -> r.cells)
+playerCells :: Player -> State -> Array Cell
+playerCells player = FM.getRow (toRow player) <<< _.cells
 
 init :: State
 init =
-  { cells: Matrix.repeat 7 2 12
+  { cells: FM.init 6 
   , nextMove: A
   }
 
 update :: Action -> State -> State
-update Reset state = init
-update (Move player idx) state = state
+update Reset state = 
+  init
+update (Move player idx) state = 
+  state
 
 view :: State -> Html Action
 view state =
   div []
-  [ div [] $ mapWithIndex (viewCell <<< Move A) (playerACells state)
+  [ div [] $ viewRow A
   , hr [] [] -- XXX: remove this ugly display hack
-  , div [] $ mapWithIndex (viewCell <<< Move B) (playerBCells state)
+  , div [] $ viewRow B
   ]
+  where 
+    viewRow player = 
+      mapWithIndex (viewCell <<< Move player) (playerCells player state)
 
 viewCell :: Action -> Cell -> Html Action
 viewCell action count =

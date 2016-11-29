@@ -3,11 +3,11 @@ module App.Layout where
 import App.Board as Board
 import App.NotFound as NotFound
 import App.Routes (Route(Home, NotFound))
-import Prelude (($), map)
+import Prelude ((<$>))
 import Pux.Html (Html, div, h1, p, text)
 
 data Action
-  = Child (Board.Action)
+  = BoardAction (Board.Action)
   | PageView Route
 
 type State =
@@ -22,7 +22,7 @@ init =
 update :: Action -> State -> State
 update (PageView route) state =
   state { route = route }
-update (Child action) state =
+update (BoardAction action) state =
   state { board = Board.update action state.board }
 
 view :: State -> Html Action
@@ -30,10 +30,9 @@ view state =
   div
     []
     [ h1 [] [ text  "Pallanguzhi" ]
-    , p [] [ text "Here is the game board:" ]
     , case state.route of
         Home ->
-          map Child $ Board.view state.board
+          BoardAction <$> Board.view state.board
         NotFound ->
           NotFound.view state
     ]
