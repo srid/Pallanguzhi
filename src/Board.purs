@@ -9,10 +9,6 @@ import Pux.CSS (backgroundColor, boxSizing, borderBox, display, em, inline, padd
 import Pux.Html (Html, div, hr, text)
 import Pux.Html.Events (onClick)
 
-data Action 
-  = Reset 
-  | Move Player Int
-
 -- TODO: rename to Pit
 type Cell = Int
 
@@ -62,28 +58,21 @@ store :: Player -> Cell -> State -> State
 store A seeds state = state { storeA = state.storeA + seeds }
 store B seeds state = state { storeA = state.storeB + seeds }
 
--- Update
-
-update :: Action -> State -> State
-update Reset state = 
-  init
-update (Move player idx) state = 
-  state
-
 -- View 
 
-view :: State -> Html Action
-view state =
+view :: forall a. (PitRef -> a) -> State -> Html a
+view clickedF state =
   div []
   [ div [] $ viewRow A
   , hr [] [] -- XXX: remove this ugly display hack
   , div [] $ viewRow B
   ]
   where 
-    viewRow player = 
-      mapWithIndex (viewCell <<< Move player) (playerCells player state)
+    viewRow player = mapWithIndex f row
+      where row = playerCells player state
+            f = viewCell <<< clickedF <<< makeRef player
 
-viewCell :: Action -> Cell -> Html Action
+viewCell :: forall a. a -> Cell -> Html a
 viewCell action count =
   div [design, onClick (const action)] [ text content ]
   where

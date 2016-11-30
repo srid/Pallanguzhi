@@ -62,4 +62,3 @@ capture state@{ hand, board } =
 
 advance :: Turn -> Turn
 advance x = x
-

@@ -4,18 +4,21 @@ module App.Round where
 import Data.Maybe (Maybe(..))
 import App.Board as Board
 import App.Turn as Turn
-import Prelude ((<<<))
 
 data State
   = Sowing Turn.State
   | Awaiting Board.Player Board.State
 
-init :: Board.Player -> Board.State -> State
-init player = Sowing <<< Turn.init player
-
 data Action
   = TurnAction Turn.Action
   | PlayerSelect Board.PitRef 
+
+init :: Board.Player -> Board.State -> State
+init player = Awaiting player 
+
+getBoard :: State -> Board.State
+getBoard (Sowing turnA) = turnA.turn.board
+getBoard (Awaiting _ board) = board
 
 update :: Action -> State -> State 
 update (TurnAction action) (Sowing turnA) = 
