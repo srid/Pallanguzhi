@@ -34,6 +34,7 @@ update NextFrame state = do
   Tuple turn' animation' <- Animation.step state.animation state.turn
   pure $ { turn: turn', animation: animation' }
 
+-- TODO: fully implement and tidy up this function.
 turns :: Maybe Turn -> Maybe (Tuple (Animation Turn) (Maybe Turn))
 turns Nothing = Nothing
 turns (Just state@{ hand, board }) =

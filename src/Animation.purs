@@ -16,11 +16,3 @@ step :: forall a. Animation a
 step animation state = do
   { head: f, tail: animation' } <- uncons animation
   pure $ Tuple (f state) animation'
-  
-{-doThis movie =
-  case step movie 0 of 
-    Nothing -> 
-      finishTurn state'
-    Just (Tuple state' movie') ->
-      continueTurn state' movie'-}
-
