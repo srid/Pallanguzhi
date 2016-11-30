@@ -1,7 +1,7 @@
 module App.Board where
 
 import App.FixedMatrix72 as FM
-import App.FixedMatrix72 (Ref(Ref), Row(A, B))
+import App.FixedMatrix72 (Ref(Ref), Row(..))
 import Data.Array (mapWithIndex)
 import Data.Function ((#))
 import Prelude ((+), bind, const, show, ($), (<<<))
@@ -39,6 +39,10 @@ lookup ref board = FM.lookup ref board.cells
 
 playerCells :: Player -> State -> Array Cell
 playerCells player = FM.getRow player <<< _.cells
+
+opponentOf :: Player -> Player
+opponentOf A = B
+opponentOf B = A
 
 init :: State
 init =

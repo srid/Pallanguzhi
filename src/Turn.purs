@@ -2,13 +2,14 @@
 module App.Turn where
 
 import Data.Maybe
-import Data.Tuple (Tuple(..))
-import Data.Unfoldable (unfoldr)
-import App.Animation (Animation)
+import App.Animation as Animation
 import App.Board as Board
 import App.Hand as Hand
+import App.Animation (Animation)
 import Data.List (List(..), (:), concat)
-import Prelude ((>>>), (<<<), ($))
+import Data.Tuple (Tuple(..))
+import Data.Unfoldable (unfoldr)
+import Prelude ((>>>), (<<<), ($), bind, pure)
 
 type Turn =
   { hand :: Hand.State
@@ -20,11 +21,18 @@ type State =
   , animation :: Animation Turn
   }
 
+data Action = NextFrame
+
 init :: Board.Player -> Board.State -> State
 init player board = { turn, animation }
   where turn = { hand, board }
         hand = Hand.init player 0
         animation = unfoldTurns turn
+
+update :: Action -> State -> Maybe State 
+update NextFrame state = do
+  Tuple turn' animation' <- Animation.step state.animation state.turn
+  pure $ { turn: turn', animation: animation' }
 
 turns :: Maybe Turn -> Maybe (Tuple (Animation Turn) (Maybe Turn))
 turns Nothing = Nothing
