@@ -1,4 +1,4 @@
-module App.Animation where
+module App.Animation (Animation, Frame, step) where
 
 import Data.List (List(..))
 import Data.Tuple
