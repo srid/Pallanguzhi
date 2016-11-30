@@ -1,57 +1,79 @@
 module App.Board where
 
+import App.FixedMatrix72 as FM
+import App.FixedMatrix72 (Ref(Ref), Row(..))
 import Data.Array (mapWithIndex)
 import Data.Function ((#))
-import Prelude (bind, const, show, ($), (<<<))
+import Prelude ((+), (-), bind, const, show, ($), (<<<))
 import Pux.CSS (backgroundColor, boxSizing, borderBox, display, em, inline, padding, rgb, style)
 import Pux.Html (Html, div, hr, text)
 import Pux.Html.Events (onClick)
-import App.FixedMatrix72 as FM
 
-data Action 
-  = Reset 
-  | Move Player Int
-
+-- TODO: rename to Pit
 type Cell = Int
 
 type State =
   { cells :: FM.FixedMatrix72 Cell
-  , nextMove :: Player
+  , storeA :: Int
+  , storeB :: Int
   }
 
-data Player = A | B
+type Player = FM.Row
 
-toRow :: Player -> FM.Row 
-toRow A = FM.A
-toRow B = FM.B
+type PitRef = Ref
+
+makeRef :: Player -> Int -> PitRef 
+makeRef = FM.makeRef 
+
+nextRef :: PitRef -> PitRef 
+nextRef (Ref { row: A, idx: 6 })   = Ref { row: B, idx: 6 }
+nextRef (Ref { row: A, idx: idx }) = Ref { row: A, idx: idx + 1 }
+nextRef (Ref { row: B, idx: 0 })   = Ref { row: A, idx: 0 }
+nextRef (Ref { row: B, idx: idx }) = Ref { row: B, idx: idx - 1 }
+
+lookup :: PitRef -> State -> Cell 
+lookup ref board = FM.lookup ref board.cells
 
 playerCells :: Player -> State -> Array Cell
-playerCells player = FM.getRow (toRow player) <<< _.cells
+playerCells player = FM.getRow player <<< _.cells
+
+opponentOf :: Player -> Player
+opponentOf A = B
+opponentOf B = A
 
 init :: State
 init =
   { cells: FM.init 6 
-  , nextMove: A
+  , storeA: 0
+  , storeB: 0
   }
 
-update :: Action -> State -> State
-update Reset state = 
-  init
-update (Move player idx) state = 
-  state
+modify :: PitRef -> (Cell -> Cell) -> State -> State 
+modify ref f board = board { cells = cells' }
+   where cells' = FM.modify ref f board.cells
 
-view :: State -> Html Action
-view state =
+clear :: PitRef -> State -> State 
+clear pitRef = modify pitRef (const 0) 
+
+store :: Player -> Cell -> State -> State 
+store A seeds state = state { storeA = state.storeA + seeds }
+store B seeds state = state { storeA = state.storeB + seeds }
+
+-- View 
+
+view :: forall a. (PitRef -> a) -> State -> Html a
+view clickedF state =
   div []
   [ div [] $ viewRow A
   , hr [] [] -- XXX: remove this ugly display hack
   , div [] $ viewRow B
   ]
   where 
-    viewRow player = 
-      mapWithIndex (viewCell <<< Move player) (playerCells player state)
+    viewRow player = mapWithIndex f row
+      where row = playerCells player state
+            f = viewCell <<< clickedF <<< makeRef player
 
-viewCell :: Action -> Cell -> Html Action
+viewCell :: forall a. a -> Cell -> Html a
 viewCell action count =
   div [design, onClick (const action)] [ text content ]
   where
