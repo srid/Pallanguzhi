@@ -30,7 +30,9 @@ getRow row (FixedMatrix72 m) =
 lookup :: forall a. Ref -> FixedMatrix72 a -> a
 lookup (Ref ref) (FixedMatrix72 m) =
   unsafePartial fromJust v 
-  where v = Matrix.get (rowToInt ref.row) ref.idx m
+  where v = Matrix.get col row m
+        row = rowToInt ref.row
+        col = ref.idx
   
 modify :: forall a. Ref -> (a -> a) -> FixedMatrix72 a -> FixedMatrix72 a
 modify (Ref ref) f (FixedMatrix72 m) =

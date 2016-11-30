@@ -12,7 +12,8 @@
     "purescript-pux-devtool": "^4.1.0",
     "purescript-matrices": "^2.0.0",
     "purescript-maybe": "^2.0.1",
-    "purescript-unfoldable": "^2.0.0"
+    "purescript-unfoldable": "^2.0.0",
+    "purescript-debug": "^2.0.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^2.0.0"

@@ -4,7 +4,7 @@ import App.FixedMatrix72 as FM
 import App.FixedMatrix72 (Ref(Ref), Row(..))
 import Data.Array (mapWithIndex)
 import Data.Function ((#))
-import Prelude ((+), bind, const, show, ($), (<<<))
+import Prelude ((+), (-), bind, const, show, ($), (<<<))
 import Pux.CSS (backgroundColor, boxSizing, borderBox, display, em, inline, padding, rgb, style)
 import Pux.Html (Html, div, hr, text)
 import Pux.Html.Events (onClick)
@@ -26,9 +26,10 @@ makeRef :: Player -> Int -> PitRef
 makeRef = FM.makeRef 
 
 nextRef :: PitRef -> PitRef 
-nextRef (Ref { row: A, idx: 6 }) = Ref { row: B, idx: 6 }
-nextRef (Ref { row: B, idx: 0 }) = Ref { row: A, idx: 0 }
-nextRef (Ref r) = Ref $ r { idx = r.idx + 1 }
+nextRef (Ref { row: A, idx: 6 })   = Ref { row: B, idx: 6 }
+nextRef (Ref { row: A, idx: idx }) = Ref { row: A, idx: idx + 1 }
+nextRef (Ref { row: B, idx: 0 })   = Ref { row: A, idx: 0 }
+nextRef (Ref { row: B, idx: idx }) = Ref { row: B, idx: idx - 1 }
 
 lookup :: PitRef -> State -> Cell 
 lookup ref board = FM.lookup ref board.cells

@@ -37,19 +37,20 @@ update NextFrame state = do
 turns :: Maybe Turn -> Maybe (Tuple (Animation Turn) (Maybe Turn))
 turns Nothing = Nothing
 turns (Just state@{ hand, board }) =
-  Just $ Tuple changes' (Just stateN)
+  Just t
   where seedsBelow = Board.lookup hand.pitRef board
         nextRef = Board.nextRef hand.pitRef
         next2Ref = Board.nextRef nextRef
         seedsNext = Board.lookup nextRef board
         seedsNext2 = Board.lookup next2Ref board
-        changes' = go hand.seeds seedsBelow seedsNext seedsNext2 state 
-        stateN = state --TODO
-        go 0 0 0 _ state' = Nil 
+        t = go hand.seeds seedsBelow seedsNext seedsNext2 state 
+        continue changes = Tuple changes (Just state) -- TODO apply them
+        end changes = Tuple changes Nothing
+        go 0 0 0 _ state' = end $ Nil 
         go 0 0 s 0 state' =
           -- advance; capture; Nothing
-          advance : capture : Nil
-        go _ _ _ _ state' = Nil -- TODO
+          end $ advance : capture : Nil
+        go _ _ _ _ state' = end $ Nil -- TODO
 
 unfoldTurns :: Turn -> Animation Turn
 unfoldTurns = concat <<< unfoldr turns <<< Just
