@@ -1,4 +1,4 @@
-module App.Turn where
+module App.Turn (unfoldTurns) where
 
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
@@ -7,7 +7,7 @@ import Data.Unfoldable (class Unfoldable, unfoldr)
 import Data.Function (apply)
 import App.Hand (State(..))
 import App.Board as Board
-import Prelude (($), (<<<), (>>>), map)
+import Prelude (($), (#), (<<<), (>>>), map)
 
 type Turn = (State -> State)
 
@@ -16,19 +16,18 @@ unfoldTurns = concat <<< unfoldr' nextTurns
 
 nextTurns :: State -> Tuple (List Turn) (Maybe State)
 nextTurns (State state@{ player, seeds, pitRef, board }) =
-  go seeds
-     (Board.lookup pitRef board)
-     (Board.lookup (Board.nextRef pitRef) board)
-     (Board.lookup ((Board.nextRef <<< Board.nextRef) pitRef) board)
-     state
-    where continue xs = Tuple xs (Just $ applyTurns xs $ State state)
-          end xs = Tuple xs Nothing
-          go 0 0 0 _ state' =
-            end $ Nil
-          go 0 0 s _ state' =
-            end $ advance : capture : Nil
-          go _ _ _ _ state' =
-            end $ Nil -- TODO: signal not reachable state
+  Board.mapPit3 pitRef (f state seeds) board
+    -- TODO: fill in these functions
+    where f state' 0 0 0 _ =
+            Nil # end
+          f state' 0 0 s _ =
+            advance : capture : Nil # end
+          f state' _ _ _ _ =
+            Nil # end
+          continue xs =
+            Tuple xs $ Just $ applyTurns xs $ State state
+          end xs =
+            Tuple xs Nothing
 
 applyTurns :: List Turn -> State -> State
 applyTurns turns s = foldr apply s turns
@@ -41,13 +40,13 @@ advance state =
 
 capture :: Turn
 capture (State state@{ player, seeds, pitRef, board }) =
-  State $ state { board = board' }
-  where board' = ( Board.clear pitRef >>> Board.store player seeds' ) board
-        seeds'  = Board.lookup pitRef board
+  State $ state { board = f board }
+  where f = Board.clear pitRef >>> Board.store player seeds'
+        seeds' = Board.lookup pitRef board
 
 -- Internal
 
--- | A version of unfoldr that allows a elements in end cause.
+-- | A version of unfoldr that allows a elements in end case.
 unfoldr' :: forall a b t. Unfoldable t
-        => (b -> Tuple a (Maybe b)) -> b -> t a
+         => (b -> Tuple a (Maybe b)) -> b -> t a
 unfoldr' f = unfoldr (map f) <<< Just

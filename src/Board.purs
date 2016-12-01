@@ -37,6 +37,20 @@ nextRef (Ref { row: B, idx: idx }) = Ref { row: B, idx: idx - 1 }
 lookup :: PitRef -> State -> Cell
 lookup ref board = FM.lookup ref board.cells
 
+mapPit :: forall a. PitRef -> (Cell -> a) -> State -> a
+mapPit ref f board = f $ lookup ref board
+
+mapPit2 :: forall a. PitRef -> (Cell -> Cell -> a) -> State -> a
+mapPit2 ref1 f board = mapPit ref1 g board
+  where g pit1 = mapPit (nextRef ref1) (f pit1) board
+
+mapPit3 :: forall a. PitRef -> (Cell -> Cell -> Cell -> a) -> State -> a
+mapPit3 ref1 f board = mapPit ref1 g board
+  where g pit1 = mapPit2 (nextRef ref1) (f pit1) board
+
+-- mapPit3 :: forall a. PitRef -> (Cell -> Cell -> Cell -> a) -> State -> a
+-- mapPit3 ref f board =
+
 playerCells :: Player -> State -> Array Cell
 playerCells player = FM.getRow player <<< _.cells
 
