@@ -5,6 +5,7 @@ import Data.Maybe (Maybe(..))
 import App.Board as Board
 import App.Board (class HasBoard, getBoard)
 import App.Hand as Hand
+import App.Hand as Turn
 import App.Animation as Animation
 import Prelude (($), (<<<))
 import Pux.Html (Html)
@@ -27,7 +28,7 @@ init player = Awaiting player
 sow :: Board.Player -> Board.PitRef -> Board.State -> State
 sow player pitRef board = Sowing $ Animation.init hand rest
   where hand = Hand.init player pitRef board
-        rest = Hand.unfoldTurns hand
+        rest = Turn.unfoldTurns hand
 
 update :: Action -> State -> State
 update AnimateTurn (Sowing handA) =
