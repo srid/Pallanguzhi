@@ -20,6 +20,4 @@ update (RoundAction action) (PlayingRound round) =
   PlayingRound $ Round.update action round
 
 view :: State -> Html Action
-view (PlayingRound round) = RoundAction <$> boardView
-    where boardView = Board.view Round.PlayerSelect board
-          board = Board.getBoard round
+view (PlayingRound round) = RoundAction <$> Round.view round

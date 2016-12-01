@@ -6,7 +6,8 @@ import App.Board as Board
 import App.Board (class HasBoard, getBoard)
 import App.Hand as Hand
 import App.Animation as Animation
-import Prelude (($))
+import Prelude (($), (<<<))
+import Pux.Html (Html)
 
 data State
   = Sowing (Animation.State Hand.State)
@@ -44,3 +45,6 @@ update (PlayerSelect pitRef) (Awaiting player board) =
 update _ state =
   -- TODO: make this state transition impossible.
   state
+
+view :: State -> Html Action
+view = Board.view PlayerSelect <<< getBoard
