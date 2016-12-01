@@ -7,9 +7,10 @@ import App.Board as Board
 import App.Hand as Hand
 import Data.List (List(..), (:), concat)
 import Data.Tuple (Tuple(..))
-import Data.Unfoldable (unfoldr)
-import Prelude ((>>>), (<<<), ($))
+import Data.Unfoldable (class Unfoldable, unfoldr)
+import Prelude ((>>>), (<<<), ($), map)
 
+-- XXX: 'Turn' is a bad name; it is a verb but we need noun.
 type Turn =
   { hand :: Hand.State
   , board :: Board.State
@@ -29,10 +30,9 @@ update :: Action -> State -> Maybe State
 update NextFrame = Animation.step
 
 -- TODO: fully implement and tidy up this function.
-turns :: Maybe Turn -> Maybe (Tuple (List (Turn -> Turn)) (Maybe Turn))
-turns Nothing = Nothing
-turns (Just state@{ hand, board }) =
-  Just t
+turns :: Turn -> Tuple (List (Turn -> Turn)) (Maybe Turn)
+turns state@{ hand, board } =
+  t
   where seedsBelow = Board.lookup hand.pitRef board
         nextRef = Board.nextRef hand.pitRef
         next2Ref = Board.nextRef nextRef
@@ -47,8 +47,13 @@ turns (Just state@{ hand, board }) =
           end $ advance : capture : Nil
         go _ _ _ _ state' = end $ Nil -- TODO
 
+-- | A version of unfoldr that allows a elements in end cause.
+unfoldr' :: forall a b t. Unfoldable t
+        => (b -> Tuple a (Maybe b)) -> b -> t a
+unfoldr' f = unfoldr (map f) <<< Just
+
 unfoldTurns :: Turn -> List (Turn -> Turn)
-unfoldTurns = concat <<< unfoldr turns <<< Just
+unfoldTurns = concat <<< unfoldr' turns
 
 capture :: Turn -> Turn
 capture state@{ hand, board } =
