@@ -10,7 +10,7 @@ import Data.Tuple (Tuple(..))
 import Data.Unfoldable (class Unfoldable, unfoldr)
 import Prelude ((>>>), (<<<), ($), map)
 
-data State = Hand
+newtype State = State
   { player :: Board.Player
   , seeds :: Board.Cell
   , pitRef :: Board.PitRef
@@ -18,10 +18,10 @@ data State = Hand
   }
 
 instance hasBoardHand :: HasBoard State where
-  getBoard (Hand h) = h.board
+  getBoard (State h) = h.board
 
 init :: Board.Player -> Board.PitRef -> Board.State -> State
-init player pitRef board = Hand
+init player pitRef board = State
   { player: player
   , seeds: 0
   , pitRef: pitRef
@@ -29,19 +29,19 @@ init player pitRef board = Hand
   }
 
 opponent :: State -> Board.Player
-opponent (Hand { player }) = Board.opponentOf player
+opponent (State { player }) = Board.opponentOf player
 
 unfoldTurns :: State -> List (State -> State)
 unfoldTurns = concat <<< unfoldr' nextTurns
 
 nextTurns :: State -> Tuple (List (State -> State)) (Maybe State)
-nextTurns (Hand state@{ player, seeds, pitRef, board }) =
+nextTurns (State state@{ player, seeds, pitRef, board }) =
   go seeds
      (Board.lookup pitRef board)
      (Board.lookup (Board.nextRef pitRef) board)
      (Board.lookup ((Board.nextRef <<< Board.nextRef) pitRef) board)
      state
-    where continue xs = Tuple xs (Just $ applyTurns xs $ Hand state)
+    where continue xs = Tuple xs (Just $ applyTurns xs $ State state)
           end xs = Tuple xs Nothing
           go 0 0 0 _ state' =
             end $ Nil
@@ -58,8 +58,8 @@ advance state =
   state -- TODO
 
 capture :: State -> State
-capture (Hand state@{ player, seeds, pitRef, board }) =
-  Hand $ state { board = board' }
+capture (State state@{ player, seeds, pitRef, board }) =
+  State $ state { board = board' }
   where board' = ( Board.clear pitRef >>> Board.store player seeds' ) board
         seeds'  = Board.lookup pitRef board
 -- | A version of unfoldr that allows a elements in end cause.
