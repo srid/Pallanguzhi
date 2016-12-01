@@ -1,6 +1,5 @@
 module App.Animation where
 
-import Data.Tuple
 import Data.List (List, uncons)
 import Data.Maybe (Maybe)
 import Prelude (($), bind, pure)

@@ -3,6 +3,7 @@ module App.Round where
 
 import Data.Maybe (Maybe(..))
 import App.Board as Board
+import App.Board (class HasBoard, getBoard)
 import App.Hand as Hand
 import App.Animation as Animation
 import Prelude (($))
@@ -15,6 +16,10 @@ data Action
   = AnimateTurn
   | PlayerSelect Board.PitRef
 
+instance hasBoardRound :: HasBoard State where
+  getBoard (Sowing handA) = getBoard handA.current
+  getBoard (Awaiting _ board) = board
+
 init :: Board.Player -> Board.State -> State
 init player = Awaiting player
 
@@ -23,11 +28,6 @@ sow player pitRef board = Sowing $ Animation.init hand rest
   where hand = Hand.init player pitRef board
         rest = Hand.unfoldTurns hand
 
--- XXX: Should this be made a type class?
-getBoard :: State -> Board.State
-getBoard (Sowing handA) = handA.current.board
-getBoard (Awaiting _ board) = board
-
 update :: Action -> State -> State
 update AnimateTurn (Sowing handA) =
   -- XXX: can this pattern be abstracted out?
@@ -35,8 +35,8 @@ update AnimateTurn (Sowing handA) =
   case Animation.step handA of
     Nothing -> -- End of turn.
       -- TODO: sould we end the round itself?
-      let opponent = Board.opponentOf handA.current.player
-      in Awaiting opponent handA.current.board
+      let opponent = Hand.opponent handA.current
+      in Awaiting opponent $ getBoard handA.current
     Just handA' ->
       Sowing handA'
 update (PlayerSelect pitRef) (Awaiting player board) =
