@@ -1,13 +1,13 @@
 module App.View where 
 
-import Data.Maybe (Maybe)
-import Prelude (bind, const, show, ($))
-import Pux.CSS (backgroundColor, boxSizing, borderBox, display, em, inline, padding, rgb, style)
-import Pux.Html (Html, div, hr, text, (#))
-import Pux.Html.Events (onClick)
-import App.Board (Cell, PitRef, Player, State)
 import App.FixedMatrix72 as FM
+import App.Board (Cell, PitRef, Player, State)
 import App.FixedMatrix72 (Row(B, A))
+import Data.Maybe (Maybe(..))
+import Prelude (bind, const, show, ($), (==), (<>))
+import Pux.CSS (Color, backgroundColor, boxSizing, borderBox, display, em, inline, padding, rgb, style)
+import Pux.Html (Html, div, hr, text, (#), (!))
+import Pux.Html.Events (onClick)
 
 class HasBoard a where
   getBoard :: a -> State
@@ -22,29 +22,43 @@ viewBoard :: forall action state. HasBoard state
           => (PitRef -> action) -> state -> Html action 
 viewBoard f state =
   div []
-  [ div # text "Player A"
+  [ viewStore config A
   , hr [] [] -- XXX: remove this ugly display hack
   , div [] $ viewRow A
   , hr [] [] -- XXX: remove this ugly display hack
   , div [] $ viewRow B
   , hr [] [] -- XXX: remove this ugly display hack
-  , div # text "Player B"
+  , viewStore config B
   ]
   where
     viewRow player = FM.mapRowWithIndex player viewCell' board.cells
       where viewCell' ref = viewCell config (f ref) ref 
             board = getBoard state
-            config = getBoardViewConfig state
+    viewStore (ViewConfig c) player = 
+      div ! css # text $ "Player " <> show player
+        where css = style $ do 
+                      backgroundColor color 
+              color = if c.focusPlayer == Just player 
+                      then focusColor 
+                      else rgb 198 34 112
+    config = getBoardViewConfig state
 
 viewCell :: forall a. ViewConfig -> a -> PitRef -> Cell -> Html a
-viewCell config action ref count =
-  div [design, onClick (const action)] [ text content ]
+viewCell (ViewConfig config) action ref count =
+  div ! css ! event # body
   where
-    content = show count
-    design = style $ do
+    body = text $ show count
+    event = onClick $ const action
+    css = style $ do
       display inline
-      backgroundColor (rgb 200 100 0)
+      backgroundColor color
       squarePadding (em 1.0)
       boxSizing borderBox
       where
         squarePadding sz = padding sz sz sz sz
+        color = if config.focusPit == Just ref
+                then focusColor
+                else (rgb 200 100 0)
+
+focusColor :: Color
+focusColor = rgb 100 200 100

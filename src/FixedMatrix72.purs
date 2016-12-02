@@ -5,7 +5,7 @@ import Data.Maybe (fromJust)
 import Matrix (Matrix)
 import Partial.Unsafe (unsafePartial)
 import Data.Array (mapWithIndex)
-import Prelude (($))
+import Prelude (($), class Eq, class Show, (==), (&&))
 
 -- | Matrix of fixed size 7 columns x 2 rows
 -- | Flexibility in size might be in order when other Mancala boards will be added.
@@ -14,7 +14,20 @@ newtype FixedMatrix72 a =
 
 data Row = A | B
 
+instance eqRow :: Eq Row where
+  eq A A = true 
+  eq B B = true 
+  eq _ _ = false
+
+instance showRow :: Show Row where 
+  show A = "A"
+  show B = "B"
+
 newtype Ref = Ref { row :: Row, idx :: Int }
+
+instance eqRef :: Eq Ref where
+  eq (Ref r1) (Ref r2) = 
+    r1.row == r2.row && r1.idx == r2.idx 
 
 init :: forall a. a -> FixedMatrix72 a
 init e =
