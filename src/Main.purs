@@ -2,11 +2,12 @@ module Main where
 
 import App.Routes (match)
 import App.Layout (Action(PageView), State, view, update)
+import Control.Monad.Eff.Timer as T
 import Control.Bind ((=<<))
 import Control.Monad.Eff (Eff)
 import DOM (DOM)
 import Prelude (bind, pure)
-import Pux (App, Config, CoreEffects, fromSimple, renderToDOM, start)
+import Pux (App, Config, CoreEffects, renderToDOM, start)
 import Pux.Devtool (Action, start) as Pux.Devtool
 import Pux.Router (sampleUrl)
 import Signal ((~>))
@@ -24,7 +25,7 @@ config state = do
 
   pure
     { initialState: state
-    , update: fromSimple update
+    , update: update
     , view: view
     , inputs: [routeSignal] }
 

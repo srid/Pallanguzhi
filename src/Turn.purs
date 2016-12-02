@@ -16,24 +16,24 @@ unfoldTurns = concat <<< unfoldr' nextTurns
 
 nextTurns :: State -> Tuple (List Turn) (Maybe State)
 nextTurns (State state@{ player, seeds, pitRef, board }) =
-  Board.mapPit3 pitRef (f state seeds) board
+  Board.mapPit3 pitRef (f seeds) board
     -- TODO: fill in these functions
-    where f state' 0 0 0 _ =
-            -- No hand, next two pints empty. End turn.
+    where f 0 0 0 _ =
+            -- No hand, next two pits empty. End turn.
             Nil # end
-          f state' 0 0 s 0 =
+          f 0 0 _ 0 =
             -- Capture and end turn 
             advance : capture : Nil # end
-          f state' 0 0 s _ =
+          f 0 0 _ _ =
             -- Capture and continue
             advance : capture : advance : Nil # continue
-          f state' 0 s _ _ =
-            -- Continue digging 
+          f 0 _ _ _ =
+            -- Lift and continue digging 
             lift : advance : Nil # continue
-          f state' s 3 _ _ =
+          f _ 3 _ _ =
             -- Pasu; capture
             sow : capture : advance : Nil # continue
-          f state' s _ _ _ =
+          f _ _ _ _ =
             -- Sow 1 seed and continue digging 
             sow : advance : Nil # continue
           continue xs =

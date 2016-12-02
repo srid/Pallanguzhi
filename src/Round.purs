@@ -8,11 +8,15 @@ import App.Hand as Hand
 import App.Turn as Turn
 import App.View (class HasBoard, ViewConfig(..), getBoard, getBoardViewConfig)
 import Data.Maybe (Maybe(..))
-import Prelude (($))
+import Prelude (($), (<$>), pure)
+import Pux (EffModel, noEffects)
 import Pux.Html (Html)
+import Control.Monad.Eff.Timer as T
+
+type HandA = Animation.State Hand.State
 
 data State
-  = Sowing (Animation.State Hand.State)
+  = Sowing HandA
   | Awaiting Board.Player Board.State
 
 data Action
@@ -41,20 +45,31 @@ sow player pitRef board = Sowing $ Animation.init hand rest
   where hand = Hand.init player pitRef board
         rest = Turn.unfoldTurns hand
 
-update :: Action -> State -> State
+update :: forall eff. Action -> State -> EffModel State Action (eff)
 update AnimateTurn (Sowing handA) =
   case Animation.step handA of
     Nothing -> -- End of turn.
       -- TODO: sould we end the round itself?
       let opponent = Hand.opponent handA.current
-      in Awaiting opponent $ getBoard handA.current
+      in noEffects $ Awaiting opponent $ getBoard handA.current
     Just handA' ->
-      Sowing handA'
+      { state: Sowing handA'
+      , effects: [ do 
+          pure $ AnimateTurn
+        ]
+      }
 update (PlayerSelect pitRef) (Awaiting player board) =
-  sow player pitRef board
+  { state: sow player pitRef board
+  , effects: [ do 
+      pure $ AnimateTurn
+    ]
+  }
 update _ state =
   -- TODO: make this state transition impossible.
-  state
+  noEffects state
+
+next :: HandA -> Maybe State
+next handA = Sowing <$> Animation.step handA
 
 view :: State -> Html Action
 view state = View.viewBoard PlayerSelect state
