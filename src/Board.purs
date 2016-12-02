@@ -20,10 +20,10 @@ makeRef :: Player -> Int -> PitRef
 makeRef = FM.makeRef
 
 nextRef :: PitRef -> PitRef
-nextRef (Ref { row: A, idx: 6 })   = Ref { row: B, idx: 6 }
-nextRef (Ref { row: A, idx: idx }) = Ref { row: A, idx: idx + 1 }
-nextRef (Ref { row: B, idx: 0 })   = Ref { row: A, idx: 0 }
-nextRef (Ref { row: B, idx: idx }) = Ref { row: B, idx: idx - 1 }
+nextRef (Ref { row: A, idx: 0 })   = Ref { row: B, idx: 0 }
+nextRef (Ref { row: A, idx: idx }) = Ref { row: A, idx: idx - 1 }
+nextRef (Ref { row: B, idx: 6 })   = Ref { row: A, idx: 6 }
+nextRef (Ref { row: B, idx: idx }) = Ref { row: B, idx: idx + 1 }
 
 lookup :: PitRef -> State -> Cell
 lookup ref board = FM.lookup ref board.cells
