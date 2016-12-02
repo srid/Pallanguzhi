@@ -1,8 +1,8 @@
 module App.Board where
 
+import Data.Maybe
 import App.FixedMatrix72 as FM
 import App.FixedMatrix72 (Ref(Ref), Row(..))
-import Data.Array (mapWithIndex)
 import Data.Function ((#))
 import Prelude ((+), (-), bind, const, show, ($), (<<<))
 import Pux.CSS (backgroundColor, boxSizing, borderBox, display, em, inline, padding, rgb, style)
@@ -24,6 +24,7 @@ type PitRef = Ref
 
 class HasBoard a where
   getBoard :: a -> State
+  getBoardViewConfig :: a -> ViewConfig
 
 makeRef :: Player -> Int -> PitRef
 makeRef = FM.makeRef
@@ -78,20 +79,27 @@ store B seeds state = state { storeA = state.storeB + seeds }
 
 -- View
 
-view :: forall a. (PitRef -> a) -> State -> Html a
-view clickedF state =
+newtype ViewConfig = ViewConfig
+  { focusPit :: Maybe PitRef
+  , focusPlayer :: Maybe Player
+  }
+
+view :: forall action state. HasBoard state 
+     => (PitRef -> action) -> state -> Html action 
+view f state =
   div []
   [ div [] $ viewRow A
   , hr [] [] -- XXX: remove this ugly display hack
   , div [] $ viewRow B
   ]
   where
-    viewRow player = mapWithIndex f row
-      where row = playerCells player state
-            f = viewCell <<< clickedF <<< makeRef player
+    viewRow player = FM.mapRowWithIndex player viewCell' board.cells
+      where viewCell' ref = viewCell config (f ref) ref 
+            board = getBoard state
+            config = getBoardViewConfig state
 
-viewCell :: forall a. a -> Cell -> Html a
-viewCell action count =
+viewCell :: forall a. ViewConfig -> a -> PitRef -> Cell -> Html a
+viewCell config action ref count =
   div [design, onClick (const action)] [ text content ]
   where
     content = show count

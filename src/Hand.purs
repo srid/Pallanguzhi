@@ -1,6 +1,7 @@
 -- / What is in the hand during a round
 module App.Hand where
 
+import Data.Maybe (Maybe(..))
 import App.Board as Board
 import App.Board (class HasBoard)
 
@@ -12,7 +13,13 @@ newtype State = State
   }
 
 instance hasBoardHand :: HasBoard State where
-  getBoard (State h) = h.board
+  getBoard (State h) = 
+    h.board
+  getBoardViewConfig (State h) = 
+    Board.ViewConfig 
+      { focusPit: Just h.pitRef 
+      , focusPlayer: Just h.player 
+      }
 
 init :: Board.Player -> Board.PitRef -> Board.State -> State
 init player pitRef board = State

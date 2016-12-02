@@ -1,13 +1,13 @@
 -- / Game round
 module App.Round where
 
-import Data.Maybe (Maybe(..))
+import App.Animation as Animation
 import App.Board as Board
-import App.Board (class HasBoard, getBoard)
 import App.Hand as Hand
 import App.Turn as Turn
-import App.Animation as Animation
-import Prelude (($), (<<<))
+import App.Board (class HasBoard, getBoard, getBoardViewConfig)
+import Data.Maybe (Maybe(..))
+import Prelude (($))
 import Pux.Html (Html)
 
 data State
@@ -19,8 +19,18 @@ data Action
   | PlayerSelect Board.PitRef
 
 instance hasBoardRound :: HasBoard State where
-  getBoard (Sowing handA) = getBoard handA.current
-  getBoard (Awaiting _ board) = board
+  getBoard (Sowing handA) = 
+    getBoard handA.current
+  getBoard (Awaiting _ board) = 
+    board
+
+  getBoardViewConfig (Sowing handA) =
+    getBoardViewConfig handA.current
+  getBoardViewConfig (Awaiting player board) =
+    Board.ViewConfig
+      { focusPit: Nothing
+      , focusPlayer: Just player
+      }
 
 init :: Board.Player -> Board.State -> State
 init player = Awaiting player
@@ -46,4 +56,4 @@ update _ state =
   state
 
 view :: State -> Html Action
-view = Board.view PlayerSelect <<< getBoard
+view state = Board.view PlayerSelect state
