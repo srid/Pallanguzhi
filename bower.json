@@ -15,7 +15,7 @@
     "purescript-unfoldable": "^2.0.0",
     "purescript-debug": "^2.0.0",
     "purescript-foldable-traversable": "^2.0.0",
-    "purescript-js-timers": "^2.0.0"
+    "purescript-aff": "^2.0.1"
   },
   "devDependencies": {
     "purescript-psci-support": "^2.0.0"

@@ -6,12 +6,12 @@ import App.Board as Board
 import App.View as View
 import App.Hand as Hand
 import App.Turn as Turn
+import Control.Monad.Aff (later')
 import App.View (class HasBoard, ViewConfig(..), getBoard, getBoardViewConfig)
 import Data.Maybe (Maybe(..))
 import Prelude (($), (<$>), pure)
 import Pux (EffModel, noEffects)
 import Pux.Html (Html)
-import Control.Monad.Eff.Timer as T
 
 type HandA = Animation.State Hand.State
 
@@ -54,7 +54,7 @@ update AnimateTurn (Sowing handA) =
       in noEffects $ Awaiting opponent $ getBoard handA.current
     Just handA' ->
       { state: Sowing handA'
-      , effects: [ do 
+      , effects: [ later' 100 do
           pure $ AnimateTurn
         ]
       }
