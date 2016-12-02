@@ -1,38 +1,60 @@
 -- / Game round
 module App.Round where
 
-import Data.Maybe (Maybe(..))
+import App.Animation as Animation
 import App.Board as Board
+import App.View as View
+import App.Hand as Hand
 import App.Turn as Turn
+import App.View (class HasBoard, ViewConfig(..), getBoard, getBoardViewConfig)
+import Data.Maybe (Maybe(..))
+import Prelude (($))
+import Pux.Html (Html)
 
 data State
-  = Sowing Turn.State
+  = Sowing (Animation.State Hand.State)
   | Awaiting Board.Player Board.State
 
 data Action
-  = TurnAction Turn.Action
-  | PlayerSelect Board.PitRef 
+  = AnimateTurn
+  | PlayerSelect Board.PitRef
+
+instance hasBoardRound :: HasBoard State where
+  getBoard (Sowing handA) = 
+    getBoard handA.current
+  getBoard (Awaiting _ board) = 
+    board
+
+  getBoardViewConfig (Sowing handA) =
+    getBoardViewConfig handA.current
+  getBoardViewConfig (Awaiting player board) =
+    ViewConfig
+      { focusPit: Nothing
+      , focusPlayer: Just player
+      }
 
 init :: Board.Player -> Board.State -> State
-init player = Awaiting player 
+init player = Awaiting player
 
-getBoard :: State -> Board.State
-getBoard (Sowing turnA) = turnA.turn.board
-getBoard (Awaiting _ board) = board
+sow :: Board.Player -> Board.PitRef -> Board.State -> State
+sow player pitRef board = Sowing $ Animation.init hand rest
+  where hand = Hand.init player pitRef board
+        rest = Turn.unfoldTurns hand
 
-update :: Action -> State -> State 
-update (TurnAction action) (Sowing turnA) = 
-  -- XXX: can this pattern be abstracted out? 
-  -- "update inner state, but if it is Nothing do this"
-  case Turn.update action turnA of 
+update :: Action -> State -> State
+update AnimateTurn (Sowing handA) =
+  case Animation.step handA of
     Nothing -> -- End of turn.
       -- TODO: sould we end the round itself?
-      let opponent = Board.opponentOf turnA.turn.hand.player
-      in Awaiting opponent turnA.turn.board
-    Just turnA' ->
-      Sowing turnA'
+      let opponent = Hand.opponent handA.current
+      in Awaiting opponent $ getBoard handA.current
+    Just handA' ->
+      Sowing handA'
 update (PlayerSelect pitRef) (Awaiting player board) =
-  Sowing (Turn.init player board)
+  sow player pitRef board
 update _ state =
   -- TODO: make this state transition impossible.
   state
+
+view :: State -> Html Action
+view state = View.viewBoard PlayerSelect state

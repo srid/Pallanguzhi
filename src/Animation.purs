@@ -1,18 +1,22 @@
-module App.Animation (Animation, Frame, step) where
+module App.Animation where
 
-import Data.Tuple
 import Data.List (List, uncons)
 import Data.Maybe (Maybe)
 import Prelude (($), bind, pure)
 
-type Frame state = (state -> state)
+type Frame a = (a -> a)
 
-type Animation state = List (Frame state)
+type Movie a = List (Frame a)
 
--- TODO: perhaps abstract the Animation a tuple and include an update function.
-step :: forall a. Animation a 
-               -> a 
-               -> Maybe (Tuple a (Animation a))
-step animation state = do
-  { head: f, tail: animation' } <- uncons animation
-  pure $ Tuple (f state) animation'
+type State a =
+  { current :: a
+  , rest :: Movie a
+  }
+
+init :: forall a. a -> Movie a -> State a
+init current rest = { current: current, rest: rest }
+
+step :: forall a. State a -> Maybe (State a)
+step { current, rest } = do
+  { head: f, tail: rest' } <- uncons rest
+  pure $ init (f current) rest'

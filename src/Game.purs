@@ -1,4 +1,4 @@
-module App.Game where 
+module App.Game where
 
 import App.Board as Board
 import App.Round as Round
@@ -12,14 +12,12 @@ data State
 data Action
   = RoundAction Round.Action
 
-init :: State 
+init :: State
 init = PlayingRound $ Round.init A Board.init
 
-update :: Action -> State -> State 
+update :: Action -> State -> State
 update (RoundAction action) (PlayingRound round) =
   PlayingRound $ Round.update action round
 
-view :: State -> Html Action 
-view (PlayingRound round) = RoundAction <$> boardView
-    where boardView = Board.view Round.PlayerSelect board
-          board = Round.getBoard round
+view :: State -> Html Action
+view (PlayingRound round) = RoundAction <$> Round.view round

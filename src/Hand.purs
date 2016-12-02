@@ -1,17 +1,33 @@
 -- / What is in the hand during a round
-module App.Hand where 
+module App.Hand where
 
-import App.Board as Board 
+import Data.Maybe (Maybe(..))
+import App.Board as Board
+import App.View (class HasBoard, ViewConfig(..))
 
-type State = 
-  { player :: Board.Player 
+newtype State = State
+  { player :: Board.Player
   , seeds :: Board.Cell
   , pitRef :: Board.PitRef
+  , board :: Board.State
   }
 
-init :: Board.Player -> Board.Cell -> State 
-init player seeds = 
+instance hasBoardHand :: HasBoard State where
+  getBoard (State h) = 
+    h.board
+  getBoardViewConfig (State h) = 
+    ViewConfig 
+      { focusPit: Just h.pitRef 
+      , focusPlayer: Just h.player 
+      }
+
+init :: Board.Player -> Board.PitRef -> Board.State -> State
+init player pitRef board = State
   { player: player
-  , seeds: seeds 
-  , pitRef: Board.makeRef player 0 
+  , seeds: 0
+  , pitRef: pitRef
+  , board: board
   }
+
+opponent :: State -> Board.Player
+opponent (State { player }) = Board.opponentOf player

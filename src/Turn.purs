@@ -1,66 +1,52 @@
--- / A turn in a game round
-module App.Turn where
+module App.Turn (unfoldTurns) where
 
-import Data.Maybe
-import App.Animation as Animation
-import App.Board as Board
-import App.Hand as Hand
-import App.Animation (Animation)
-import Data.List (List(..), (:), concat)
+import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
-import Data.Unfoldable (unfoldr)
-import Prelude ((>>>), (<<<), ($), bind, pure)
+import Data.List
+import Data.Unfoldable (class Unfoldable, unfoldr)
+import Data.Function (apply)
+import App.Hand (State(..))
+import App.Board as Board
+import Prelude (($), (#), (<<<), (>>>), map)
 
-type Turn =
-  { hand :: Hand.State
-  , board :: Board.State
-  }
+type Turn = (State -> State)
 
-type State =
-  { turn :: Turn
-  , animation :: Animation Turn
-  }
+unfoldTurns :: State -> List Turn
+unfoldTurns = concat <<< unfoldr' nextTurns
 
-data Action = NextFrame
+nextTurns :: State -> Tuple (List Turn) (Maybe State)
+nextTurns (State state@{ player, seeds, pitRef, board }) =
+  Board.mapPit3 pitRef (f state seeds) board
+    -- TODO: fill in these functions
+    where f state' 0 0 0 _ =
+            Nil # end
+          f state' 0 0 s _ =
+            advance : capture : Nil # end
+          f state' _ _ _ _ =
+            Nil # end
+          continue xs =
+            Tuple xs $ Just $ applyTurns xs $ State state
+          end xs =
+            Tuple xs Nothing
 
-init :: Board.Player -> Board.State -> State
-init player board = { turn, animation }
-  where turn = { hand, board }
-        hand = Hand.init player 0
-        animation = unfoldTurns turn
+applyTurns :: List Turn -> State -> State
+applyTurns turns s = foldr apply s turns
 
-update :: Action -> State -> Maybe State 
-update NextFrame state = do
-  Tuple turn' animation' <- Animation.step state.animation state.turn
-  pure $ { turn: turn', animation: animation' }
+-- All turns
 
--- TODO: fully implement and tidy up this function.
-turns :: Maybe Turn -> Maybe (Tuple (Animation Turn) (Maybe Turn))
-turns Nothing = Nothing
-turns (Just state@{ hand, board }) =
-  Just t
-  where seedsBelow = Board.lookup hand.pitRef board
-        nextRef = Board.nextRef hand.pitRef
-        next2Ref = Board.nextRef nextRef
-        seedsNext = Board.lookup nextRef board
-        seedsNext2 = Board.lookup next2Ref board
-        t = go hand.seeds seedsBelow seedsNext seedsNext2 state 
-        continue changes = Tuple changes (Just state) -- TODO apply them
-        end changes = Tuple changes Nothing
-        go 0 0 0 _ state' = end $ Nil 
-        go 0 0 s 0 state' =
-          -- advance; capture; Nothing
-          end $ advance : capture : Nil
-        go _ _ _ _ state' = end $ Nil -- TODO
+advance :: Turn
+advance state =
+  state -- TODO
 
-unfoldTurns :: Turn -> Animation Turn
-unfoldTurns = concat <<< unfoldr turns <<< Just
+capture :: Turn
+capture (State state@{ player, seeds, pitRef, board }) =
+  State $ state { board = f board }
+  where f = Board.clear pitRef >>> Board.store player seeds'
+        seeds' = Board.lookup pitRef board
 
-capture :: Turn -> Turn
-capture state@{ hand, board } =
-  state { board = board' }
-  where seeds = Board.lookup hand.pitRef board
-        board' = (Board.clear hand.pitRef >>> Board.store hand.player seeds) board
+-- Internal
 
-advance :: Turn -> Turn
-advance x = x
+-- | A version of unfoldr that allows a elements in end case.
+unfoldr' :: forall a b t. Unfoldable t
+         => (b -> Tuple a (Maybe b)) -> b -> t a
+unfoldr' f = unfoldr (map f) <<< Just
