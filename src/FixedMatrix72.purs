@@ -51,7 +51,7 @@ lookup (Ref ref) (FixedMatrix72 m) =
 modify :: forall a. Ref -> (a -> a) -> FixedMatrix72 a -> FixedMatrix72 a
 modify (Ref ref) f (FixedMatrix72 m) =
   FixedMatrix72 $ unsafePartial fromJust v
-  where v = Matrix.modify (rowToInt ref.row) ref.idx f m
+  where v = Matrix.modify ref.idx (rowToInt ref.row) f m
 
 mapRowWithIndex :: forall a b. Row -> (Ref -> a -> b) -> FixedMatrix72 a -> Array b
 mapRowWithIndex row f m = mapWithIndex g $ getRow row m

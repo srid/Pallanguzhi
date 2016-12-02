@@ -3,8 +3,10 @@ module App.Layout where
 import App.Game as Game
 import App.NotFound as NotFound
 import App.Routes (Route(Home, NotFound))
-import Prelude ((<$>))
+import Prelude ((<$>), ($), (#))
 import Pux.Html (Html, div, h1, text)
+import Pux (EffModel, noEffects, mapEffects, mapState)
+import DOM (DOM)
 
 data Action
   = GameAction (Game.Action)
@@ -19,11 +21,13 @@ init =
   { route: NotFound
   , game: Game.init }
 
-update :: Action -> State -> State
+update :: Action -> State -> EffModel State Action (dom :: DOM)
 update (PageView route) state =
-  state { route = route }
+  noEffects $ state { route = route }
 update (GameAction action) state =
-  state { game = Game.update action state.game }
+  Game.update action state.game 
+  # mapEffects GameAction 
+  # mapState state { game = _ }
 
 view :: State -> Html Action
 view state =
