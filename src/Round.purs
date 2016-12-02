@@ -3,9 +3,10 @@ module App.Round where
 
 import App.Animation as Animation
 import App.Board as Board
+import App.View as View
 import App.Hand as Hand
 import App.Turn as Turn
-import App.Board (class HasBoard, getBoard, getBoardViewConfig)
+import App.View (class HasBoard, ViewConfig(..), getBoard, getBoardViewConfig)
 import Data.Maybe (Maybe(..))
 import Prelude (($))
 import Pux.Html (Html)
@@ -27,7 +28,7 @@ instance hasBoardRound :: HasBoard State where
   getBoardViewConfig (Sowing handA) =
     getBoardViewConfig handA.current
   getBoardViewConfig (Awaiting player board) =
-    Board.ViewConfig
+    ViewConfig
       { focusPit: Nothing
       , focusPlayer: Just player
       }
@@ -56,4 +57,4 @@ update _ state =
   state
 
 view :: State -> Html Action
-view state = Board.view PlayerSelect state
+view state = View.viewBoard PlayerSelect state

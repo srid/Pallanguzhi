@@ -3,7 +3,7 @@ module App.Hand where
 
 import Data.Maybe (Maybe(..))
 import App.Board as Board
-import App.Board (class HasBoard)
+import App.View (class HasBoard, ViewConfig(..))
 
 newtype State = State
   { player :: Board.Player
@@ -16,7 +16,7 @@ instance hasBoardHand :: HasBoard State where
   getBoard (State h) = 
     h.board
   getBoardViewConfig (State h) = 
-    Board.ViewConfig 
+    ViewConfig 
       { focusPit: Just h.pitRef 
       , focusPlayer: Just h.player 
       }
