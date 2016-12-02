@@ -2,7 +2,7 @@ module App.Board where
 
 import App.FixedMatrix72 as FM
 import App.FixedMatrix72 (Ref(Ref), Row(..))
-import Prelude (const, ($), (+), (-), (<<<))
+import Prelude (const, (==), ($), (+), (-), (<<<))
 
 -- TODO: rename to Pit
 type Cell = Int
@@ -27,6 +27,9 @@ nextRef (Ref { row: B, idx: idx }) = Ref { row: B, idx: idx + 1 }
 
 lookup :: PitRef -> State -> Cell
 lookup ref board = FM.lookup ref board.cells
+
+belongsTo :: PitRef -> Player -> Boolean 
+belongsTo (Ref { row, idx }) player = row == player
 
 mapPit :: forall a. PitRef -> (Cell -> a) -> State -> a
 mapPit ref f board = f $ lookup ref board
