@@ -90,6 +90,7 @@ view state =
     [ heading state
     , errorDiv state
     , View.viewBoard PlayerSelect state
+    , hand state
     ]
     where errorDiv (Awaiting (Just error) _ _) =
             div [] [ text $ "ERROR: " <> error ]
@@ -99,5 +100,7 @@ view state =
             div [] [ text $ "Sowing - " <> show (length handA.rest) <> " turns left"]
           heading (Awaiting _ player _) =
             div [] [ text $ "Awaiting turn by " <> show player ]
-
-
+          hand (Sowing handA) =
+            Hand.view handA.current
+          hand (Awaiting _ _ _) =
+            div [] [ text "No hand" ]
