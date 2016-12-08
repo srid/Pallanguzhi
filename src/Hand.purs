@@ -5,7 +5,7 @@ import Data.Maybe (Maybe(..))
 import App.Board as Board
 import App.View (class HasBoard, ViewConfig(..))
 import Pux.Html (Html, div, text)
-import Prelude (show, ($))
+import Prelude (show, ($), (<>))
 
 newtype State = State
   { player :: Board.Player
@@ -41,5 +41,8 @@ view (State h) =
     , text $ show h.player 
     , text $ " containing "
     , text $ show h.seeds
-    , text " seeds."
+    , text " seeds at "
+    , text $ show h.pitRef 
+    , text $ " next3=" <> next3 
     ]
+    where next3 = Board.mapPit3 h.pitRef (\s1 s2 s3 -> show s1 <> ":" <> show s2 <> ":" <> show s3) h.board

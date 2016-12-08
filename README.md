@@ -1,29 +1,14 @@
 # Pallanguzhi
 
-A work-in-progress Tamil dice game in PureScript.
+A work-in-progress [Tamil mancala game](http://mancala.wikia.com/wiki/Pallankuzhi) in PureScript.
 
-## Installation
+## Getting started
 
 ```sh
 npm install
-npm start
+npm run watch # run with file watch and hot reload
+# npm run serve  <- no file watch or hot reload
+# npm run build <- bundles and minifies for production
 ```
 
-Visit `http://localhost:3000` in your browser, edit `src/purs/Layout.purs`
-and watch the magic!
-
-## Available scripts
-
-### watch
-
-`npm start` or `npm run watch` will start a development server, which
-hot-reloads your application when sources changes.
-
-### serve
-
-`npm run serve` serves your application without watching for changes or
-hot-reloading.
-
-### build
-
-`npm run build` bundles and minifies your application to run in production mode.
+Visit `http://localhost:3000` in your browser.

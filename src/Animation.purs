@@ -1,22 +1,27 @@
 module App.Animation where
 
 import Data.List (List, uncons)
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe(..))
 import Prelude (($), bind, pure)
 
-type Frame a = (a -> a)
+class Transition f a where 
+  getTransitionF :: f a -> (a -> a)
 
-type Movie a = List (Frame a)
-
-type State a =
+type State f a =
   { current :: a
-  , rest :: Movie a
+  , lastTransition :: Maybe (f a)
+  , rest :: List (f a)
   }
 
-init :: forall a. a -> Movie a -> State a
-init current rest = { current: current, rest: rest }
+init :: forall f a. a -> List (f a) -> State f a
+init current rest = { current: current
+                    , lastTransition: Nothing
+                    , rest: rest }
 
-step :: forall a. State a -> Maybe (State a)
+step :: forall f a. Transition f a => State f a -> Maybe (State f a)
 step { current, rest } = do
-  { head: f, tail: rest' } <- uncons rest
-  pure $ init (f current) rest'
+  { head: t, tail: rest' } <- uncons rest
+  pure $ { current: (getTransitionF t) current 
+         , lastTransition: Just t 
+         , rest: rest' 
+         }
