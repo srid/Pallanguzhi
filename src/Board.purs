@@ -42,9 +42,6 @@ mapPit3 :: forall a. PitRef -> (Cell -> Cell -> Cell -> a) -> State -> a
 mapPit3 ref1 f board = mapPit ref1 g board
   where g pit1 = mapPit2 (nextRef ref1) (f pit1) board
 
--- mapPit3 :: forall a. PitRef -> (Cell -> Cell -> Cell -> a) -> State -> a
--- mapPit3 ref f board =
-
 playerCells :: Player -> State -> Array Cell
 playerCells player = FM.getRow player <<< _.cells
 
