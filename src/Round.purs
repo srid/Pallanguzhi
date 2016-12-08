@@ -15,7 +15,7 @@ import Prelude (($), (<>), (<$>), (==), (>), pure, bind, unit, show)
 import Pux (EffModel, noEffects)
 import Pux.Html (Html, div, hr, text, (#), (!))
 
-type HandA = Animation.State Hand.State
+type HandA = Animation.State Turn.Turn' Hand.State
 
 type Error = String
 
@@ -82,7 +82,8 @@ update _ state =
   noEffects state
 
 animateSow :: forall eff. State -> EffModel State Action (eff)
-animateSow state = { state: state, effects: [ later' 100 $ pure AnimateTurn ] }
+animateSow state = { state: state
+                   , effects: [ later' 100 $ pure AnimateTurn ] }
 
 view :: State -> Html Action
 view state = 
@@ -91,6 +92,7 @@ view state =
     , errorDiv state
     , View.viewBoard PlayerSelect state
     , hand state
+    , lastTransition state
     ]
     where errorDiv (Awaiting (Just error) _ _) =
             div [] [ text $ "ERROR: " <> error ]
@@ -104,3 +106,9 @@ view state =
             Hand.view handA.current
           hand (Awaiting _ _ _) =
             div [] [ text "No hand" ]
+          lastTransition (Sowing handA) =
+            case handA.lastTransition of 
+              Just t -> div [] [ text $ "Last transition: " <> show t ]
+              Nothing -> div [] [ text "No last transition" ]
+          lastTransition _ =
+            div [] [ text "" ]

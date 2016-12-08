@@ -1,15 +1,31 @@
-module App.Turn (unfoldTurns) where
+module App.Turn (unfoldTurns, Turn'(..)) where
 
+import Data.List
+import App.Board as Board
+import App.Animation (class Transition)
+import App.Hand (State(..))
+import Data.Function (apply)
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
-import Data.List
 import Data.Unfoldable (class Unfoldable, unfoldr)
-import Data.Function (apply)
-import App.Hand (State(..))
-import App.Board as Board
-import Prelude (($), (#), (+), (-), (<<<), (>>>), map)
+import Prelude (class Show, map, (#), ($), (+), (-), (<$>), (<<<))
 
-type Turn = (State -> State)
+data Turn' a
+  = Advance (a -> a)
+  | Capture (a -> a)
+  | Lift (a -> a)
+  | Sow (a -> a)
+
+instance showTurn :: Show (Turn' a) where 
+  show (Advance _) = "Advance"
+  show (Capture _) = "Capture"
+  show (Lift _) = "Lift"
+  show (Sow _) = "Sow"
+
+type Turn = Turn' State
+
+instance transitionTurn :: Transition Turn' State where
+  getTransitionF = turnFunction
 
 unfoldTurns :: State -> List Turn
 unfoldTurns = concat <<< unfoldr' nextTurns
@@ -41,32 +57,39 @@ nextTurns (State state@{ player, seeds, pitRef, board }) =
           end xs =
             Tuple xs Nothing
 
+turnFunction :: forall a. Turn' a -> a -> a 
+turnFunction (Advance f) = f
+turnFunction (Capture f) = f
+turnFunction (Lift f) = f
+turnFunction (Sow f) = f
+
 applyTurns :: List Turn -> State -> State
-applyTurns turns s = foldr apply s turns
+applyTurns turns s = foldr apply s (turnFunction <$> turns)
 
 -- All turns
 
 advance :: Turn
-advance (State s) =
+advance = Advance \(State s) ->
   State $ s { pitRef = Board.nextRef s.pitRef }
 
 capture :: Turn
-capture (State s) =
-  State $ s { board = f s.board }
-  where f = Board.clear s.pitRef >>> Board.store s.player seeds
-        seeds = Board.lookup s.pitRef s.board
+capture = Capture \(State s) ->
+  State $ s { board = s.board 
+                      # Board.clear s.pitRef 
+                      # Board.store s.player (Board.lookup s.pitRef s.board)
+            }
 
 lift :: Turn 
-lift (State s) =
-  State $ s { seeds = seeds, board = board }
-    where seeds = Board.lookup s.pitRef s.board 
-          board = Board.clear s.pitRef s.board
+lift = Lift \(State s) ->
+  State $ s { seeds = Board.lookup s.pitRef s.board 
+            , board = Board.clear s.pitRef s.board
+            }
 
 sow :: Turn 
-sow (State s) =
-  State $ s { seeds = seeds, board = board }
-    where seeds = s.seeds - 1
-          board = Board.modify s.pitRef ((+) 1) s.board
+sow = Sow \(State s) ->
+  State $ s { seeds = s.seeds - 1
+            , board = Board.modify s.pitRef ((+) 1) s.board
+            }
 
 -- Internal
 
