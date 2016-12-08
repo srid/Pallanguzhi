@@ -8,7 +8,7 @@ import Data.Function (apply)
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Data.Unfoldable (class Unfoldable, unfoldr)
-import Prelude (class Show, map, (#), ($), (+), (-), (<$>), (<<<))
+import Prelude (class Show, flip, map, (#), ($), (+), (-), (<$>), (<<<))
 
 data Turn' a
   = Advance (a -> a)
@@ -64,7 +64,7 @@ turnFunction (Lift f) = f
 turnFunction (Sow f) = f
 
 applyTurns :: List Turn -> State -> State
-applyTurns turns s = foldr apply s (turnFunction <$> turns)
+applyTurns turns s = foldl (flip apply) s (turnFunction <$> turns)
 
 -- All turns
 
