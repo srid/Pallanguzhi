@@ -2,10 +2,7 @@ module App.Board where
 
 import App.FixedMatrix72 as FM
 import App.FixedMatrix72 (Ref(Ref), Row(..))
-import Prelude (const, (==), ($), (+), (-), (<<<))
-
--- TODO: rename to Pit
-type Pit = Int
+import Prelude (const, ($), (+), (-), (==))
 
 type State =
   { cells :: FM.FixedMatrix72 Pit
@@ -13,11 +10,20 @@ type State =
   , storeB :: Int
   }
 
+type Pit = Int
+type PitRef = FM.Ref
 type Player = FM.Row
 
-type PitRef = Ref
-makeRef :: Player -> Int -> PitRef
-makeRef = FM.makeRef
+init :: State
+init =
+  { cells: FM.init 6
+  , storeA: 0
+  , storeB: 0
+  }
+
+opponentOf :: Player -> Player
+opponentOf A = B
+opponentOf B = A
 
 nextRef :: PitRef -> PitRef
 nextRef (Ref { row: A, idx: 0 })   = Ref { row: B, idx: 0 }
@@ -27,9 +33,6 @@ nextRef (Ref { row: B, idx: idx }) = Ref { row: B, idx: idx + 1 }
 
 lookup :: PitRef -> State -> Pit
 lookup ref board = FM.lookup ref board.cells
-
-belongsTo :: PitRef -> Player -> Boolean 
-belongsTo (Ref { row, idx }) player = row == player
 
 mapPit :: forall a. PitRef -> (Pit -> a) -> State -> a
 mapPit ref f board = f $ lookup ref board
@@ -42,19 +45,8 @@ mapPit3 :: forall a. PitRef -> (Pit -> Pit -> Pit -> a) -> State -> a
 mapPit3 ref1 f board = mapPit ref1 g board
   where g pit1 = mapPit2 (nextRef ref1) (f pit1) board
 
-playerCells :: Player -> State -> Array Pit
-playerCells player = FM.getRow player <<< _.cells
-
-opponentOf :: Player -> Player
-opponentOf A = B
-opponentOf B = A
-
-init :: State
-init =
-  { cells: FM.init 6
-  , storeA: 0
-  , storeB: 0
-  }
+belongsTo :: PitRef -> Player -> Boolean 
+belongsTo (Ref { row, idx }) player = row == player
 
 modify :: PitRef -> (Pit -> Pit) -> State -> State
 modify ref f board = board { cells = cells' }

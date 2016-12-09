@@ -1,8 +1,8 @@
 module App.View where 
 
 import App.FixedMatrix72 as FM
-import App.Board (Pit, PitRef, Player, State)
 import App.FixedMatrix72 (Row(B, A))
+import App.Board (Pit, PitRef, Player, State)
 import Data.Maybe (Maybe(..))
 import Prelude (bind, const, show, ($), (==), (<>))
 import Pux.CSS (Color, backgroundColor, boxSizing, borderBox, display, em, inline, padding, rgb, style)

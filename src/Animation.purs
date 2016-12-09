@@ -14,9 +14,9 @@ type State f a =
   }
 
 init :: forall f a. a -> List (f a) -> State f a
-init current rest = { current: current
-                    , lastTransition: Nothing
-                    , rest: rest }
+init = { current: _
+       , lastTransition: Nothing
+       , rest: _ }
 
 step :: forall f a. Transition f a => State f a -> Maybe (State f a)
 step { current, rest } = do
