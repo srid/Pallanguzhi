@@ -11,9 +11,9 @@ import Control.Monad.Aff (later')
 import Data.Either (Either(..))
 import Data.List (length)
 import Data.Maybe (Maybe(..))
-import Prelude (($), (<>), (<$>), (==), (>), pure, bind, unit, show)
+import Prelude (bind, pure, show, unit, ($), (<>), (>))
 import Pux (EffModel, noEffects)
-import Pux.Html (Html, div, hr, text, (#), (!))
+import Pux.Html (Html, div, text)
 
 type HandA = Animation.State Turn.Turn' Hand.State
 
@@ -83,7 +83,19 @@ update _ state =
 
 animateSow :: forall eff. State -> EffModel State Action (eff)
 animateSow state = { state: state
-                   , effects: [ later' 100 $ pure AnimateTurn ] }
+                   , effects: [ later' delay $ pure AnimateTurn ] }
+                      where delay = animateDelay state
+
+animateDelay :: State -> Int 
+animateDelay (Sowing handA) = 
+  case handA.lastTransition of 
+    Just (Turn.Capture _) -> 1000 
+    Just (Turn.Lift _) -> 500 
+    Just (Turn.Sow _) -> 120 
+    _ -> 80
+animateDelay _ =
+  100
+
 
 view :: State -> Html Action
 view state = 
