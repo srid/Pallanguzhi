@@ -9,7 +9,7 @@ import Prelude (show, ($), (<>))
 
 newtype State = State
   { player :: Board.Player
-  , seeds :: Board.Cell
+  , seeds :: Board.Pit
   , pitRef :: Board.PitRef
   , board :: Board.State
   }

@@ -1,7 +1,7 @@
 module App.View where 
 
 import App.FixedMatrix72 as FM
-import App.Board (Cell, PitRef, Player, State)
+import App.Board (Pit, PitRef, Player, State)
 import App.FixedMatrix72 (Row(B, A))
 import Data.Maybe (Maybe(..))
 import Prelude (bind, const, show, ($), (==), (<>))
@@ -43,7 +43,7 @@ viewBoard f state =
                       else rgb 198 34 112
     config = getBoardViewConfig state
 
-viewCell :: forall a. ViewConfig -> a -> PitRef -> Cell -> Html a
+viewCell :: forall a. ViewConfig -> a -> PitRef -> Pit -> Html a
 viewCell (ViewConfig config) action ref count =
   div ! css ! event # body
   where
