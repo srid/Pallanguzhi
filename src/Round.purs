@@ -6,8 +6,7 @@ import App.Board as Board
 import App.Board (Board)
 import App.Hand as Hand
 import App.Turn as Turn
-import App.View as View
-import App.View (class HasBoard, BoardViewConfig(..), getBoard, getBoardViewConfig)
+import App.View (class HasBoard, BoardViewConfig(..), getBoard, getBoardViewConfig, viewBoard)
 import Control.Monad.Aff (later')
 import Data.Either (Either(..))
 import Data.List (length)
@@ -66,11 +65,11 @@ initSow' player pitRef board = Sowing $ Animation.init hand rest
 update :: forall eff. Action -> State -> EffModel State Action (eff)
 update AnimateTurn (Sowing handA) =
   case Animation.step handA of
-    Nothing -> -- End of turn.
-      -- TODO: sould we end the round itself?
-      let opponent = Hand.opponent handA.current
-      in noEffects $ Awaiting Nothing opponent $ getBoard handA.current
+    Nothing ->
+      -- Turn over; either await for opponent or (TODO) end turn
+      noEffects $ awaitOpponent handA.current
     Just handA' ->
+      -- Continue turn (animation)
       animateSow $ Sowing handA'
 update (PlayerSelect pitRef) (Awaiting _ player board) =
   case initSow player pitRef board of 
@@ -81,6 +80,9 @@ update (PlayerSelect pitRef) (Awaiting _ player board) =
 update _ state =
   -- TODO: make this state transition impossible.
   noEffects state
+
+awaitOpponent :: Hand.State -> State 
+awaitOpponent hand = Awaiting Nothing (Hand.opponent hand) (getBoard hand)
 
 animateSow :: forall eff. State -> EffModel State Action (eff)
 animateSow state = { state: state
@@ -103,7 +105,7 @@ view state =
   div [] 
     [ heading state
     , errorDiv state
-    , View.viewBoard PlayerSelect state
+    , viewBoard PlayerSelect state
     , hand state
     , lastTransition state
     ]
