@@ -2,7 +2,8 @@
 module App.Hand where
 
 import App.Board as Board
-import App.View (class HasBoard, ViewConfig(..))
+import App.Board (Board)
+import App.View (class HasBoard, BoardViewConfig(..))
 import Data.List (intercalate)
 import Data.Maybe (Maybe(..))
 import Prelude (show, ($), (<>), map)
@@ -12,19 +13,19 @@ newtype State = State
   { player :: Board.Player
   , seeds :: Board.Pit
   , pitRef :: Board.PitRef
-  , board :: Board.State
+  , board :: Board
   }
 
 instance hasBoardHand :: HasBoard State where
   getBoard (State h) = 
     h.board
   getBoardViewConfig (State h) = 
-    ViewConfig 
+    BoardViewConfig 
       { focusPit: Just h.pitRef 
       , focusPlayer: Just h.player 
       }
 
-init :: Board.Player -> Board.PitRef -> Board.State -> State
+init :: Board.Player -> Board.PitRef -> Board -> State
 init player pitRef board = State
   { player: player
   , seeds: 0

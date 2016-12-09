@@ -3,10 +3,11 @@ module App.Round where
 
 import App.Animation as Animation
 import App.Board as Board
+import App.Board (Board)
 import App.Hand as Hand
 import App.Turn as Turn
 import App.View as View
-import App.View (class HasBoard, ViewConfig(..), getBoard, getBoardViewConfig)
+import App.View (class HasBoard, BoardViewConfig(..), getBoard, getBoardViewConfig)
 import Control.Monad.Aff (later')
 import Data.Either (Either(..))
 import Data.List (length)
@@ -21,7 +22,7 @@ type Error = String
 
 data State
   = Sowing HandA
-  | Awaiting (Maybe Error) Board.Player Board.State 
+  | Awaiting (Maybe Error) Board.Player Board 
 
 data Action
   = AnimateTurn
@@ -36,15 +37,15 @@ instance hasBoardRound :: HasBoard State where
   getBoardViewConfig (Sowing handA) =
     getBoardViewConfig handA.current
   getBoardViewConfig (Awaiting _ player board) =
-    ViewConfig
+    BoardViewConfig
       { focusPit: Nothing
       , focusPlayer: Just player
       }
 
-init :: Board.Player -> Board.State -> State
+init :: Board.Player -> Board -> State
 init player = Awaiting Nothing player 
 
-initSow :: Board.Player -> Board.PitRef -> Board.State -> Either Error State
+initSow :: Board.Player -> Board.PitRef -> Board -> Either Error State
 initSow player pitRef board = do 
   _ <- verifyPlayer 
   _ <- verifyPit
@@ -57,7 +58,7 @@ initSow player pitRef board = do
                         else Left "Cannot play from empty pit"
 
 
-initSow' :: Board.Player -> Board.PitRef -> Board.State -> State
+initSow' :: Board.Player -> Board.PitRef -> Board -> State
 initSow' player pitRef board = Sowing $ Animation.init hand rest
   where hand = Hand.init player pitRef board
         rest = Turn.unfoldTurns hand
