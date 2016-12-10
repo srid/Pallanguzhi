@@ -1,5 +1,5 @@
 // Place your settings in this file to overwrite default and user settings.
 {
-  // XXX: hardcoded path until this is fixed => https://github.com/nwolverson/vscode-ide-purescript/issues/34
-  "purescript.pscIdeServerExe": "/Users/srid/Projects/Pallanguzhi/node_modules/.bin/psc-ide-server"
+  // Use the project local binary
+  "purescript.addNpmPath": true
 }
