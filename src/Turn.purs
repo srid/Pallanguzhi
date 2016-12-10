@@ -2,7 +2,7 @@ module App.Turn (unfoldTurns, Turn(..)) where
 
 import Data.List
 import App.Board as Board
-import App.TurnAnimation (class Transform)
+import App.TurnAnimation (class Turnable, runTurn)
 import App.Hand (State(..))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
@@ -17,14 +17,18 @@ instance showTurn :: Show (Turn State) where
   show Lift = "Lift"
   show Sow = "Sow"
 
--- FIXME: this is ugly
-instance transformTurn :: Transform State Turn where 
-  transform = runTurn
-  delay (Just Advance) = 100
-  delay (Just Capture) = 500
-  delay (Just Lift) = 600
-  delay (Just Sow) = 150
-  delay Nothing = 100
+-- XXX: keep UI config isolated
+instance turnableTurn :: Turnable State Turn where 
+  runTurn Advance = advance
+  runTurn Capture = capture
+  runTurn Lift = lift 
+  runTurn Sow = sow
+
+  turnDelay (Just Advance) = 100
+  turnDelay (Just Capture) = 500
+  turnDelay (Just Lift) = 600
+  turnDelay (Just Sow) = 150
+  turnDelay Nothing = 100
 
 unfoldTurns :: State -> List (Turn State)
 unfoldTurns = concat <<< unfoldr' nextTurns
@@ -55,12 +59,6 @@ nextTurns (State state@{ player, seeds, pitRef, board }) =
             Tuple xs $ Just $ applyTurns xs $ State state
           end xs =
             Tuple xs Nothing
-
-runTurn :: (Turn State) -> State -> State
-runTurn Advance = advance
-runTurn Capture = capture
-runTurn Lift = lift 
-runTurn Sow = sow 
 
 applyTurns :: List (Turn State) -> State -> State
 applyTurns turns s = foldl (flip runTurn) s turns

@@ -119,4 +119,4 @@ view state =
               Just t -> div [] [ text $ "Last turn: " <> show t ]
               Nothing -> div [] [ text "No last turn" ]
           lastTurn _ =
-            div [] [ text "" ]
+            div [] []
