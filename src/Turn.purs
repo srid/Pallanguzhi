@@ -9,9 +9,9 @@ import Data.Tuple (Tuple(..))
 import Data.Unfoldable (class Unfoldable, unfoldr)
 import Prelude (class Show, flip, map, (#), ($), (+), (-), (<<<))
 
-data Turn state = Advance | Capture | Lift | Sow
+data Turn = Advance | Capture | Lift | Sow
 
-instance showTurn :: Show (Turn State) where 
+instance showTurn :: Show Turn where 
   show Advance = "Advance"
   show Capture = "Capture"
   show Lift = "Lift"
@@ -30,10 +30,10 @@ instance turnableTurn :: Turnable State Turn where
   turnDelay (Just Sow) = 150
   turnDelay Nothing = 100
 
-unfoldTurns :: State -> List (Turn State)
+unfoldTurns :: State -> List Turn
 unfoldTurns = concat <<< unfoldr' nextTurns
 
-nextTurns :: State -> Tuple (List (Turn State)) (Maybe State)
+nextTurns :: State -> Tuple (List Turn) (Maybe State)
 nextTurns (State state@{ player, seeds, pitRef, board }) =
   Board.mapPit3 pitRef (f seeds) board
     -- TODO: fill in these functions
@@ -60,7 +60,7 @@ nextTurns (State state@{ player, seeds, pitRef, board }) =
           end xs =
             Tuple xs Nothing
 
-applyTurns :: List (Turn State) -> State -> State
+applyTurns :: List Turn -> State -> State
 applyTurns turns s = foldl (flip runTurn) s turns
 
 -- All turns

@@ -6,19 +6,19 @@ import Prelude (($), bind, pure)
 import Pux (EffModel)
 import Control.Monad.Aff (later')
 
-class Turnable model turn where
-  runTurn :: turn model -> model -> model
-  turnDelay :: Maybe (turn model) -> Int
+class Turnable model turn | turn -> model where
+  runTurn :: turn -> model -> model
+  turnDelay :: Maybe turn -> Int
 
 type State model turn = 
   { current :: model 
-  , lastTurn :: Maybe (turn model)
-  , remainingTurns :: List (turn model)
+  , lastTurn :: Maybe turn 
+  , remainingTurns :: List turn
   }
 
 data Action = NextFrame
 
-init :: forall model turn. model -> List (turn model) -> State model turn 
+init :: forall model turn. model -> List turn -> State model turn 
 init = { current: _, lastTurn: Nothing, remainingTurns: _ }
 
 update :: forall model turn eff. 
