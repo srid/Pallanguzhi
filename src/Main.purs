@@ -2,7 +2,6 @@ module Main where
 
 import App.Routes (match)
 import App.Layout (Action(PageView), State, view, update)
-import Control.Monad.Eff.Timer as T
 import Control.Bind ((=<<))
 import Control.Monad.Eff (Eff)
 import DOM (DOM)

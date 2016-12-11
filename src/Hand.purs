@@ -1,29 +1,31 @@
 -- / What is in the hand during a round
 module App.Hand where
 
-import Data.Maybe (Maybe(..))
 import App.Board as Board
-import App.View (class HasBoard, ViewConfig(..))
+import App.Board (Board)
+import App.View (class HasBoard, BoardViewConfig(..))
+import Data.List (intercalate)
+import Data.Maybe (Maybe(..))
+import Prelude (show, ($), (<>), map)
 import Pux.Html (Html, div, text)
-import Prelude (show, ($), (<>))
 
 newtype State = State
   { player :: Board.Player
-  , seeds :: Board.Cell
+  , seeds :: Board.Pit
   , pitRef :: Board.PitRef
-  , board :: Board.State
+  , board :: Board
   }
 
 instance hasBoardHand :: HasBoard State where
   getBoard (State h) = 
     h.board
   getBoardViewConfig (State h) = 
-    ViewConfig 
+    BoardViewConfig 
       { focusPit: Just h.pitRef 
       , focusPlayer: Just h.player 
       }
 
-init :: Board.Player -> Board.PitRef -> Board.State -> State
+init :: Board.Player -> Board.PitRef -> Board -> State
 init player pitRef board = State
   { player: player
   , seeds: 0
@@ -37,12 +39,11 @@ opponent (State { player }) = Board.opponentOf player
 view :: forall action. State -> Html action 
 view (State h) =
   div []
-    [ text "Hand by " 
-    , text $ show h.player 
-    , text $ " containing "
-    , text $ show h.seeds
-    , text " seeds at "
-    , text $ show h.pitRef 
-    , text $ " next3=" <> next3 
+    [ text $ "Hand by " <> show h.player  
+          <> " containing " <> show h.seeds
+          <> " seeds at " <> show h.pitRef 
+          <> " next3=" <> next3 
     ]
-    where next3 = Board.mapPit3 h.pitRef (\s1 s2 s3 -> show s1 <> ":" <> show s2 <> ":" <> show s3) h.board
+    where next3 = Board.mapPit3 h.pitRef 
+                                (\s1 s2 s3 -> intercalate ":" $ map show [s1, s2, s3]) 
+                                h.board

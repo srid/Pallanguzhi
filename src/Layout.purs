@@ -14,12 +14,14 @@ data Action
 
 type State =
   { route :: Route
-  , game :: Game.State }
+  , game :: Game.State 
+  }
 
 init :: State
 init =
   { route: NotFound
-  , game: Game.init }
+  , game: Game.init 
+  }
 
 update :: Action -> State -> EffModel State Action (dom :: DOM)
 update (PageView route) state =

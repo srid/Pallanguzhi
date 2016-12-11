@@ -1,22 +1,22 @@
 module App.View where 
 
 import App.FixedMatrix72 as FM
-import App.Board (Cell, PitRef, Player, State)
 import App.FixedMatrix72 (Row(B, A))
+import App.Board (Pit, PitRef, Player, Board)
 import Data.Maybe (Maybe(..))
 import Prelude (bind, const, show, ($), (==), (<>))
 import Pux.CSS (Color, backgroundColor, boxSizing, borderBox, display, em, inline, padding, rgb, style)
 import Pux.Html (Html, div, hr, text, (#), (!))
 import Pux.Html.Events (onClick)
 
-class HasBoard a where
-  getBoard :: a -> State
-  getBoardViewConfig :: a -> ViewConfig
-
-newtype ViewConfig = ViewConfig
+newtype BoardViewConfig = BoardViewConfig
   { focusPit :: Maybe PitRef
   , focusPlayer :: Maybe Player
   }
+
+class HasBoard a where
+  getBoard :: a -> Board
+  getBoardViewConfig :: a -> BoardViewConfig
 
 viewBoard :: forall action state. HasBoard state 
           => (PitRef -> action) -> state -> Html action 
@@ -31,20 +31,22 @@ viewBoard f state =
   , viewStore config B
   ]
   where
+    board = getBoard state
+    config = getBoardViewConfig state
     viewRow player = FM.mapRowWithIndex player viewCell' board.cells
       where viewCell' ref = viewCell config (f ref) ref 
-            board = getBoard state
-    viewStore (ViewConfig c) player = 
-      div ! css # text $ "Player " <> show player
-        where css = style $ do 
-                      backgroundColor color 
-              color = if c.focusPlayer == Just player 
-                      then focusColor 
-                      else rgb 198 34 112
-    config = getBoardViewConfig state
 
-viewCell :: forall a. ViewConfig -> a -> PitRef -> Cell -> Html a
-viewCell (ViewConfig config) action ref count =
+viewStore :: forall a. BoardViewConfig -> Row -> Html a
+viewStore (BoardViewConfig config) player = 
+  div ! css # text $ "Player " <> show player
+    where css = style $ do 
+                  backgroundColor color 
+          color = if config.focusPlayer == Just player 
+                  then focusColor 
+                  else rgb 198 34 112
+
+viewCell :: forall a. BoardViewConfig -> a -> PitRef -> Pit -> Html a
+viewCell (BoardViewConfig config) action ref count =
   div ! css ! event # body
   where
     body = text $ show count

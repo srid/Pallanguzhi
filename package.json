@@ -41,6 +41,7 @@
   "devDependencies": {
     "source-map-loader": "^0.1.5",
     "webpack-dev-middleware": "^1.8.3",
-    "webpack-hot-middleware": "^2.12.2"
+    "webpack-hot-middleware": "^2.12.2",
+    "pulp": "^10.0.0"
   }
 }
