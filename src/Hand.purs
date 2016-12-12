@@ -3,7 +3,7 @@ module App.Hand where
 
 import App.Board as Board
 import App.Board (Board)
-import App.View (class HasBoard, BoardViewConfig(..))
+import App.BoardView (class HasBoard, BoardViewConfig(..))
 import Data.List (intercalate)
 import Data.Maybe (Maybe(..))
 import Prelude (show, ($), (<>), map)

@@ -1,4 +1,4 @@
-module App.View where 
+module App.BoardView where 
 
 import App.FixedMatrix72 as FM
 import App.FixedMatrix72 (Row(B, A))

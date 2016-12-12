@@ -7,7 +7,7 @@ import App.Board (Board)
 import App.Hand as Hand
 import App.Turn as Turn
 import App.Turn (Turn)
-import App.View (class HasBoard, BoardViewConfig(..), getBoard, getBoardViewConfig, viewBoard)
+import App.BoardView (class HasBoard, BoardViewConfig(..), getBoard, getBoardViewConfig, viewBoard)
 import Data.Either (Either(..))
 import Data.List (length)
 import Data.Maybe (Maybe(..))

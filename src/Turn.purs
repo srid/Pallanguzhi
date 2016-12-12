@@ -25,9 +25,9 @@ instance turnableTurn :: Turnable State Turn where
   runTurn Sow = sow
 
   turnDelay (Just Advance) = 100
-  turnDelay (Just Capture) = 500
-  turnDelay (Just Lift) = 600
-  turnDelay (Just Sow) = 150
+  turnDelay (Just Capture) = 400
+  turnDelay (Just Lift) = 400
+  turnDelay (Just Sow) = 50
   turnDelay Nothing = 100
 
 unfoldTurns :: State -> List Turn
