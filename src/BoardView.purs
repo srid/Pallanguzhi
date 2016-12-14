@@ -3,9 +3,9 @@ module App.BoardView where
 import App.FixedMatrix72 as FM
 import App.Board (Pit, PitRef, Player, Board)
 import App.FixedMatrix72 (Row(B, A))
-import Prelude (bind, const, show, ($), (<<<), (<>))
-import Pux.CSS (Color, backgroundColor, boxSizing, borderBox, display, em, inline, padding, rgb, style)
-import Pux.Html (Html, div, hr, text, (#), (!))
+import Prelude (bind, const, show, ($), (<>))
+import Pux.CSS (Color, backgroundColor, em, hsl, lighten, padding, rotateHue, style)
+import Pux.Html (Html, div, hr, span, text)
 import Pux.Html.Events (onClick)
 
 class BoardView a where 
@@ -16,10 +16,11 @@ class BoardView a where
 data PitState = Normal | Lifted | Captured | Sowed
 
 pitStateColor :: PitState -> Color 
-pitStateColor Normal = rgb 100 200 100
-pitStateColor Captured = rgb 300 0 0
-pitStateColor Lifted = rgb 200 200 300
-pitStateColor Sowed = rgb 100 300 300
+pitStateColor = go 
+  where go Normal = hsl 200.0 1.0 0.3
+        go Captured = rotateHue 300.0 $ go Lifted
+        go Lifted = rotateHue 200.0 $ go Normal
+        go Sowed = lighten 0.3 $ go Normal
 
 view :: forall action state. BoardView state 
      => (PitRef -> action) -> state -> Html action 
@@ -41,31 +42,26 @@ view f state =
 viewStore :: forall a state. BoardView state 
           => state -> Row -> Html a
 viewStore state player = 
-  div ! css # text $ "Player " <> show player
+  div [css] [text $ "Player " <> show player]
     where css = style $ do 
-                  backgroundColor color 
+            backgroundColor color 
+            apply4 padding (em 0.5)
           color = if isPlaying state player 
-                  then focusColor 
-                  else rgb 198 34 112
+                  then pitStateColor Sowed
+                  else pitStateColor Normal 
 
 viewCell :: forall a state. BoardView state 
           => state -> a -> PitRef -> Pit -> Html a
 viewCell state action ref count =
-  div ! css ! event # body
+  span [css, event] [body]
   where
     body = text $ show count
     event = onClick $ const action
     css = style $ do
-      display inline
-      backgroundColor $ pitColor state ref
-      squarePadding (em 1.0)
-      boxSizing borderBox
+      backgroundColor color
+      apply4 padding (em 0.9)
       where
-        squarePadding sz = padding sz sz sz sz
+        color = pitStateColor $ pitState state ref
 
-pitColor :: forall state. BoardView state 
-         => state -> PitRef -> Color 
-pitColor state = pitStateColor <<< pitState state 
-
-focusColor :: Color
-focusColor = rgb 100 200 100
+apply4 :: forall a b. (a -> a -> a -> a -> b) -> a -> b
+apply4 f a = f a a a a
