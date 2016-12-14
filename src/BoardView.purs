@@ -1,7 +1,7 @@
 module App.BoardView where 
 
 import App.FixedMatrix72 as FM
-import App.Board (Pit, PitRef, Player, Board)
+import App.Board (Pit, PitRef, Player, Board, getStore)
 import App.FixedMatrix72 (Row(B, A))
 import Prelude (bind, const, show, ($), (<>))
 import Pux.CSS (Color, backgroundColor, em, hsl, lighten, padding, rotateHue, style)
@@ -42,8 +42,15 @@ view f state =
 viewStore :: forall a state. BoardView state 
           => state -> Row -> Html a
 viewStore state player = 
-  div [css] [text $ "Player " <> show player]
-    where css = style $ do 
+  div [css] [text s] 
+    where s = "Player " 
+                <> show player
+                <> " with "
+                <> show seeds
+                <> " seeds."
+          seeds = getStore player board
+          board = getBoard state
+          css = style $ do 
             backgroundColor color 
             apply4 padding (em 0.5)
           color = if isPlaying state player 
