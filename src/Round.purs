@@ -7,11 +7,12 @@ import App.Board (Board)
 import App.Hand as Hand
 import App.Turn as Turn
 import App.Turn (Turn)
-import App.BoardView (class HasBoard, BoardViewConfig(..), getBoard, getBoardViewConfig, viewBoard)
+import App.BoardView as BoardView
+import App.BoardView (class BoardView, getBoard, isPlaying, pitState)
 import Data.Either (Either(..))
 import Data.List (length)
-import Data.Maybe (Maybe(..))
-import Prelude (bind, pure, show, unit, (#), ($), (<>), (>), (>>>))
+import Data.Maybe (Maybe(Nothing, Just))
+import Prelude (bind, pure, show, unit, (#), ($), (<>), (>), (>>>), (==))
 import Pux (EffModel, noEffects, mapState, mapEffects)
 import Pux.Html (Html, div, text)
 
@@ -22,19 +23,22 @@ data State
   = Turning HandA
   | Awaiting (Maybe Error) Board.Player Board 
 
-instance hasBoardRound :: HasBoard State where
-  getBoard (Turning handA) = 
-    getBoard handA.current
-  getBoard (Awaiting _ _ board) = 
-    board
+instance boardViewRound :: BoardView State where
+  getBoard (Turning handA) = getBoard handA.current
+  getBoard (Awaiting _ _ board) = board
 
-  getBoardViewConfig (Turning handA) =
-    getBoardViewConfig handA.current
-  getBoardViewConfig (Awaiting _ player board) =
-    BoardViewConfig
-      { focusPit: Nothing
-      , focusPlayer: Just player
-      }
+  isPlaying (Turning handA) player = isPlaying handA.current player
+  isPlaying (Awaiting _ player _) player' = player == player'
+
+  pitState (Turning handA) ref = 
+    go handA.lastTurn (pitState handA.current ref)
+      where go _ BoardView.Normal = BoardView.Normal 
+            go Nothing ps = ps 
+            go (Just Turn.Capture) _ = BoardView.Captured 
+            go (Just Turn.Lift) _ = BoardView.Lifted 
+            go (Just Turn.Sow) _ = BoardView.Sowed
+            go (Just Turn.Advance) _ = BoardView.Sowed
+  pitState (Awaiting _ _ _) _ = BoardView.Normal
 
 data Action
   = TurnAnimationAction TurnAnimation.Action
@@ -98,7 +102,7 @@ view state =
   div [] 
     [ heading state
     , errorDiv state
-    , viewBoard PlayerSelect state
+    , BoardView.view PlayerSelect state
     , hand state
     , lastTurn state
     ]
