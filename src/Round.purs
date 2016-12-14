@@ -43,7 +43,10 @@ instance boardViewRound :: BoardView State where
             go _ (Just Turn.Lift) _ = BoardView.Lifted 
             go (Just Turn.Sow) _ _ = BoardView.Sowed
             go (Just Turn.Advance) _ _ = BoardView.Sowed
-  pitState (Awaiting _ _ _) _ = BoardView.Normal
+  pitState (Awaiting _ player _) ref = 
+    if Board.belongsTo ref player 
+      then BoardView.Sowed 
+      else BoardView.Normal
 
 data Action
   = TurnAnimationAction TurnAnimation.Action
@@ -106,10 +109,10 @@ view :: State -> Html Action
 view state = 
   div [] 
     [ heading state
-    , errorDiv state
     , BoardView.view PlayerSelect state
     , hand state
     , lastTurn state
+    , errorDiv state
     ]
     where errorDiv (Awaiting (Just error) _ _) =
             div [] [ text $ "ERROR: " <> error ]
