@@ -5,7 +5,7 @@ import Pux.CSS as C
 import App.Board (Pit, PitRef, Player, Board, getStore)
 import App.FixedMatrix72 (Row(B, A))
 import Prelude (bind, const, show, ($), (<>), (<))
-import Pux.CSS (Color, backgroundColor, border, display, em, px, flexFlow, fontSize, hsl, inline, left, lighten, padding, pct, rotateHue, style, width)
+import Pux.CSS (Color, backgroundColor, em, hsl, lighten, padding, px, rotateHue, style)
 import Pux.Html as H
 import Pux.Html (Html, div, hr, span, text)
 import Pux.Html.Events (onClick)
@@ -19,9 +19,9 @@ data PitState = Normal | Lifted | Captured | Sowed
 
 pitStateColor :: PitState -> Color 
 pitStateColor = go 
-  where go Normal = hsl 200.0 1.0 0.3
-        go Captured = rotateHue 300.0 $ go Lifted
-        go Lifted = rotateHue 200.0 $ go Normal
+  where go Normal = hsl 40.0 1.0 0.3
+        go Captured = rotateHue 50.0 $ go Lifted
+        go Lifted = rotateHue 100.0 $ go Normal
         go Sowed = lighten 0.3 $ go Normal
 
 view :: forall action state. BoardView state 
