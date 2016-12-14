@@ -24,11 +24,13 @@ instance turnableTurn :: Turnable State Turn where
   runTurn Lift = lift 
   runTurn Sow = sow
 
-  turnDelay (Just Advance) = 100
-  turnDelay (Just Capture) = 400
-  turnDelay (Just Lift) = 400
-  turnDelay (Just Sow) = 50
-  turnDelay Nothing = 100
+  turnDelay (Just Capture) _ = 500
+  turnDelay _ (Just Capture) = 500
+  turnDelay (Just Lift) _ = 500
+  turnDelay _ (Just Lift) = 500
+  turnDelay (Just Advance) _ = 100
+  turnDelay (Just Sow) _ = 50
+  turnDelay Nothing _ = 100
 
 unfoldTurns :: State -> List Turn
 unfoldTurns = concat <<< unfoldr' nextTurns

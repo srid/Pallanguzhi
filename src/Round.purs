@@ -31,13 +31,18 @@ instance boardViewRound :: BoardView State where
   isPlaying (Awaiting _ player _) player' = player == player'
 
   pitState (Turning handA) ref = 
-    go handA.lastTurn (pitState handA.current ref)
-      where go _ BoardView.Normal = BoardView.Normal 
-            go Nothing ps = ps 
-            go (Just Turn.Capture) _ = BoardView.Captured 
-            go (Just Turn.Lift) _ = BoardView.Lifted 
-            go (Just Turn.Sow) _ = BoardView.Sowed
-            go (Just Turn.Advance) _ = BoardView.Sowed
+    go lastTurn nextTurn pitState'
+      where lastTurn = handA.lastTurn
+            nextTurn = TurnAnimation.nextTurn handA 
+            pitState' = pitState handA.current ref
+            go _ _ BoardView.Normal = BoardView.Normal 
+            go Nothing _ ps = ps 
+            go (Just Turn.Capture) _ _ = BoardView.Captured 
+            go _ (Just Turn.Capture) _ = BoardView.Captured 
+            go (Just Turn.Lift) _ _ = BoardView.Lifted 
+            go _ (Just Turn.Lift) _ = BoardView.Lifted 
+            go (Just Turn.Sow) _ _ = BoardView.Sowed
+            go (Just Turn.Advance) _ _ = BoardView.Sowed
   pitState (Awaiting _ _ _) _ = BoardView.Normal
 
 data Action
