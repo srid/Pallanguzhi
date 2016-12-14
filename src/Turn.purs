@@ -73,8 +73,9 @@ capture :: State -> State
 capture (State s) =
   State $ s { board = s.board 
                       # Board.clear s.pitRef 
-                      # Board.store s.player (Board.lookup s.pitRef s.board)
+                      # Board.store s.player seeds
             }
+    where seeds = Board.lookup s.pitRef s.board
 
 lift :: State -> State 
 lift (State s) =

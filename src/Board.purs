@@ -57,7 +57,7 @@ clear pitRef = modify pitRef (const 0)
 
 store :: Player -> Pit -> Board -> Board
 store A seeds board = board { storeA = board.storeA + seeds }
-store B seeds board = board { storeA = board.storeB + seeds }
+store B seeds board = board { storeB = board.storeB + seeds }
 
 getStore :: Player -> Board -> Pit 
 getStore A board = board.storeA
