@@ -3,10 +3,10 @@ module App.Hand where
 
 import App.Board as Board
 import App.Board (Board)
-import App.View (class HasBoard, BoardViewConfig(..))
+import App.BoardView as BoardView
+import App.BoardView (class BoardView)
 import Data.List (intercalate)
-import Data.Maybe (Maybe(..))
-import Prelude (show, ($), (<>), map)
+import Prelude (show, ($), (<>), map, (==))
 import Pux.Html (Html, div, text)
 
 newtype State = State
@@ -16,14 +16,15 @@ newtype State = State
   , board :: Board
   }
 
-instance hasBoardHand :: HasBoard State where
-  getBoard (State h) = 
-    h.board
-  getBoardViewConfig (State h) = 
-    BoardViewConfig 
-      { focusPit: Just h.pitRef 
-      , focusPlayer: Just h.player 
-      }
+instance boardViewHand :: BoardView State where
+  getBoard (State h) = h.board
+
+  isPlaying (State h) player = h.player == player 
+
+  pitState (State h) ref = 
+    if ref == h.pitRef 
+      then BoardView.Sowed
+      else BoardView.Normal
 
 init :: Board.Player -> Board.PitRef -> Board -> State
 init player pitRef board = State

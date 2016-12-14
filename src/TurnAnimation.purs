@@ -8,7 +8,7 @@ import Control.Monad.Aff (later')
 
 class Turnable model turn | turn -> model where
   runTurn :: turn -> model -> model
-  turnDelay :: Maybe turn -> Int
+  turnDelay :: Maybe turn -> Maybe turn -> Int
 
 type State model turn = 
   { current :: model 
@@ -20,6 +20,11 @@ data Action = NextFrame
 
 init :: forall model turn. model -> List turn -> State model turn 
 init = { current: _, lastTurn: Nothing, remainingTurns: _ }
+
+nextTurn :: forall model turn. State model turn -> Maybe turn
+nextTurn { current, lastTurn, remainingTurns } = do
+  { head: head, tail: tail } <- uncons remainingTurns 
+  pure head
 
 update :: forall model turn eff. 
           Turnable model turn
@@ -36,7 +41,7 @@ withAnimateEffect :: forall model turn eff.
                   -> EffModel (State model turn) Action (eff)
 withAnimateEffect state = 
   { state: state 
-  , effects: [ later' (turnDelay state.lastTurn) (pure NextFrame) ]
+  , effects: [ later' (turnDelay state.lastTurn $ nextTurn state) (pure NextFrame) ]
   }
 
 nextFrame :: forall model turn. 
