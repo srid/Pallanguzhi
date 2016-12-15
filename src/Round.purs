@@ -33,15 +33,10 @@ instance boardViewRound :: BoardView State where
   getHand _ = Nothing
 
   getTurn (Turning _ _ turn turns) = go turn (List.head turns)
-    where go (Just Turn.Capture) _ = Just Turn.Capture
-          go _ (Just Turn.Capture) = Just Turn.Capture
-          go (Just Turn.Lift) _ = Just Turn.Lift
-          go _ (Just Turn.Lift) = Just Turn.Lift
-          go (Just Turn.Sow) _ = Just Turn.Sow
-          go _ (Just Turn.Sow) = Just Turn.Sow
-          go (Just t) _ = Just t 
-          go _ (Just t) = Just t 
-          go _ _ = Nothing
+    where go (Just Turn.Advance) Nothing = Just Turn.Advance 
+          go (Just Turn.Advance) t = t 
+          go Nothing t = t
+          go t _ = t
   getTurn _ = Nothing
 
 data Action 

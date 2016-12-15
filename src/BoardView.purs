@@ -14,6 +14,7 @@ import Pux.Html as H
 import Pux.Html (Html, div, text)
 import Pux.Html.Events (onClick)
 
+-- TODO: drop in favour of direct use of Turn
 data PitState = Normal | Lifted | Captured | Sowed
 
 class BoardView a where 
@@ -33,11 +34,10 @@ pitState state ref = fromMaybe Normal $ do
             c Turn.Sow = Sowed 
             c _ = Normal
 
+-- FIXME: not handling Awaiting state
 isPlaying :: forall a. BoardView a => a -> Player -> Boolean
 isPlaying a player = maybe false f (getHand a)
   where f hand = hand.player == player
-
-
 
 pitStateColor :: PitState -> Color 
 pitStateColor = go 
