@@ -19,6 +19,7 @@ data PitState = Normal | Lifted | Captured | Sowed
 
 class BoardView a where 
   getBoard :: a -> Board 
+  getCurrentPlayer :: a -> Maybe Player
   getHand :: a -> Maybe Hand
   getTurn :: a -> Maybe Turn
 
@@ -34,10 +35,9 @@ pitState state ref = fromMaybe Normal $ do
             c Turn.Sow = Sowed 
             c _ = Normal
 
--- FIXME: not handling Awaiting state
-isPlaying :: forall a. BoardView a => a -> Player -> Boolean
-isPlaying a player = maybe false f (getHand a)
-  where f hand = hand.player == player
+isPlaying :: forall state. BoardView state => state -> Player -> Boolean
+isPlaying state player = maybe false f (getCurrentPlayer state)
+  where f currentPlayer = player == currentPlayer
 
 pitStateColor :: PitState -> Color 
 pitStateColor = go 

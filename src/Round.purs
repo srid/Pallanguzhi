@@ -29,6 +29,9 @@ instance boardViewRound :: BoardView State where
   getBoard (Turning _ board _ _) = board
   getBoard (Awaiting _ _ board) = board
 
+  getCurrentPlayer (Turning hand _ _ _) = Just hand.player 
+  getCurrentPlayer (Awaiting _ player board) = Just player
+
   getHand (Turning hand _ _ _) = Just hand
   getHand _ = Nothing
 
