@@ -15,7 +15,7 @@ import Data.Either (Either(..))
 import Data.List (List, length, uncons)
 import Data.Maybe (Maybe(Nothing, Just))
 import Data.Tuple (Tuple(..))
-import Prelude (bind, pure, show, unit, (#), ($), (<>), (==), (>))
+import Prelude (bind, pure, show, unit, (#), ($), (<>), (>))
 import Pux (EffModel, noEffects)
 import Pux.Html (Html, div, text)
 
@@ -29,25 +29,20 @@ instance boardViewRound :: BoardView State where
   getBoard (Turning _ board _ _) = board
   getBoard (Awaiting _ _ board) = board
 
-  isPlaying (Turning hand _ _ _) player = player == hand.player 
-  isPlaying (Awaiting _ player' _) player = player == player'
+  getHand (Turning hand _ _ _) = Just hand
+  getHand _ = Nothing
 
-  pitState (Turning hand board lastTurn turns) ref = 
-    if hand.pitRef == ref 
-      then go lastTurn nextTurn 
-      else BoardView.Normal
-        where nextTurn = List.head turns
-              go Nothing _ = BoardView.Normal
-              go (Just Turn.Capture) _ = BoardView.Captured 
-              go _ (Just Turn.Capture) = BoardView.Captured 
-              go (Just Turn.Lift) _ = BoardView.Lifted 
-              go _ (Just Turn.Lift) = BoardView.Lifted 
-              go (Just Turn.Sow) _ = BoardView.Sowed
-              go (Just Turn.Advance) _ = BoardView.Sowed
-  pitState (Awaiting _ player _) ref = 
-    if Board.belongsTo ref player 
-      then BoardView.Sowed 
-      else BoardView.Normal
+  getTurn (Turning _ _ turn turns) = go turn (List.head turns)
+    where go (Just Turn.Capture) _ = Just Turn.Capture
+          go _ (Just Turn.Capture) = Just Turn.Capture
+          go (Just Turn.Lift) _ = Just Turn.Lift
+          go _ (Just Turn.Lift) = Just Turn.Lift
+          go (Just Turn.Sow) _ = Just Turn.Sow
+          go _ (Just Turn.Sow) = Just Turn.Sow
+          go (Just t) _ = Just t 
+          go _ (Just t) = Just t 
+          go _ _ = Nothing
+  getTurn _ = Nothing
 
 data Action 
   = PlayerSelect PitRef

@@ -3,19 +3,41 @@ module App.BoardView where
 import App.FixedMatrix72 as FM
 import Pux.CSS as C
 import App.Board (Pit, PitRef, Player, Board, getStore)
+import App.Turn (Turn)
+import App.Turn as Turn
+import App.Hand (Hand)
 import App.FixedMatrix72 (Row(B, A))
-import Prelude (bind, const, show, ($), (<>), (<))
+import Data.Maybe
+import Prelude (bind, const, show, ($), (<>), (<), (==), pure)
 import Pux.CSS (Color, backgroundColor, em, hsl, lighten, padding, px, rotateHue, style)
 import Pux.Html as H
 import Pux.Html (Html, div, text)
 import Pux.Html.Events (onClick)
 
+data PitState = Normal | Lifted | Captured | Sowed
+
 class BoardView a where 
   getBoard :: a -> Board 
-  isPlaying :: a -> Player -> Boolean
-  pitState :: a -> PitRef -> PitState 
+  getHand :: a -> Maybe Hand
+  getTurn :: a -> Maybe Turn
 
-data PitState = Normal | Lifted | Captured | Sowed
+pitState :: forall state. BoardView state => state -> PitRef -> PitState 
+pitState state ref = fromMaybe Normal $ do 
+  hand <- getHand state 
+  turn <- getTurn state 
+  if ref == hand.pitRef 
+    then pure $ c turn 
+    else Nothing 
+      where c Turn.Capture = Captured 
+            c Turn.Lift = Lifted 
+            c Turn.Sow = Sowed 
+            c _ = Normal
+
+isPlaying :: forall a. BoardView a => a -> Player -> Boolean
+isPlaying a player = maybe false f (getHand a)
+  where f hand = hand.player == player
+
+
 
 pitStateColor :: PitState -> Color 
 pitStateColor = go 
