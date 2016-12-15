@@ -7,7 +7,7 @@ import App.FixedMatrix72 (Row(B, A))
 import Prelude (bind, const, show, ($), (<>), (<))
 import Pux.CSS (Color, backgroundColor, em, hsl, lighten, padding, px, rotateHue, style)
 import Pux.Html as H
-import Pux.Html (Html, div, hr, span, text)
+import Pux.Html (Html, div, text)
 import Pux.Html.Events (onClick)
 
 class BoardView a where 

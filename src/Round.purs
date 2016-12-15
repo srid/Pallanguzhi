@@ -1,76 +1,77 @@
 -- / Game round
 module App.Round where
 
-import App.TurnAnimation as TurnAnimation
 import App.Board as Board
-import App.Board (Board)
+import App.BoardView as BoardView
 import App.Hand as Hand
 import App.Turn as Turn
+import Data.List as List
+import App.Board (Board, Player, PitRef, opponentOf)
+import App.BoardView (class BoardView)
+import App.Hand (Hand)
 import App.Turn (Turn)
-import App.BoardView as BoardView
-import App.BoardView (class BoardView, getBoard, isPlaying, pitState)
+import Control.Monad.Aff (later')
 import Data.Either (Either(..))
-import Data.List (length)
+import Data.List (List, length, uncons)
 import Data.Maybe (Maybe(Nothing, Just))
-import Prelude (bind, pure, show, unit, (#), ($), (<>), (>), (>>>), (==))
-import Pux (EffModel, noEffects, mapState, mapEffects)
+import Data.Tuple (Tuple(..))
+import Prelude (bind, pure, show, unit, (#), ($), (<>), (==), (>))
+import Pux (EffModel, noEffects)
 import Pux.Html (Html, div, text)
 
-type HandA = TurnAnimation.State Hand.State Turn
 type Error = String
 
 data State
-  = Turning HandA
-  | Awaiting (Maybe Error) Board.Player Board 
+  = Turning Hand Board (Maybe Turn) (List Turn)
+  | Awaiting (Maybe Error) Player Board 
 
 instance boardViewRound :: BoardView State where
-  getBoard (Turning handA) = getBoard handA.current
+  getBoard (Turning _ board _ _) = board
   getBoard (Awaiting _ _ board) = board
 
-  isPlaying (Turning handA) player = isPlaying handA.current player
-  isPlaying (Awaiting _ player _) player' = player == player'
+  isPlaying (Turning hand _ _ _) player = player == hand.player 
+  isPlaying (Awaiting _ player' _) player = player == player'
 
-  pitState (Turning handA) ref = 
-    go lastTurn nextTurn pitState'
-      where lastTurn = handA.lastTurn
-            nextTurn = TurnAnimation.nextTurn handA 
-            pitState' = pitState handA.current ref
-            go _ _ BoardView.Normal = BoardView.Normal 
-            go Nothing _ ps = ps 
-            go (Just Turn.Capture) _ _ = BoardView.Captured 
-            go _ (Just Turn.Capture) _ = BoardView.Captured 
-            go (Just Turn.Lift) _ _ = BoardView.Lifted 
-            go _ (Just Turn.Lift) _ = BoardView.Lifted 
-            go (Just Turn.Sow) _ _ = BoardView.Sowed
-            go (Just Turn.Advance) _ _ = BoardView.Sowed
+  pitState (Turning hand board lastTurn turns) ref = 
+    if hand.pitRef == ref 
+      then go lastTurn nextTurn 
+      else BoardView.Normal
+        where nextTurn = List.head turns
+              go Nothing _ = BoardView.Normal
+              go (Just Turn.Capture) _ = BoardView.Captured 
+              go _ (Just Turn.Capture) = BoardView.Captured 
+              go (Just Turn.Lift) _ = BoardView.Lifted 
+              go _ (Just Turn.Lift) = BoardView.Lifted 
+              go (Just Turn.Sow) _ = BoardView.Sowed
+              go (Just Turn.Advance) _ = BoardView.Sowed
   pitState (Awaiting _ player _) ref = 
     if Board.belongsTo ref player 
       then BoardView.Sowed 
       else BoardView.Normal
 
-data Action
-  = TurnAnimationAction TurnAnimation.Action
-  | PlayerSelect Board.PitRef
+data Action 
+  = PlayerSelect PitRef
+  | ContinueTurn
 
-init :: Board.Player -> Board -> State
-init player = Awaiting Nothing player 
+init :: Player -> Board -> State
+init = Awaiting Nothing 
 
 update :: forall eff. Action -> State -> EffModel State Action (eff)
-update (TurnAnimationAction action) (Turning state) = 
-  case TurnAnimation.update action state of
-    Nothing ->  -- Turn over
-      awaitOpponent state.current 
+update ContinueTurn (Turning hand board lastTurn nextTurns) = 
+  case uncons nextTurns of 
+    Nothing -> -- Turn over
+      awaitOpponent hand board
       # noEffects
-    Just handA' ->
-      handA'
-      # wrapTurnAnimation
+    Just { head, tail } ->
+      go head tail $ Turn.runTurn head (Tuple hand board)  
+        where go head tail (Tuple hand' board') = 
+                Turning hand' board' (Just head) tail 
+                # withAnimateEffect (Just head) (List.head tail)
 
 update (PlayerSelect pitRef) (Awaiting _ player board) =
   case beginTurn player pitRef board of 
-    Right handA -> 
-      handA 
-      # TurnAnimation.withAnimateEffect
-      # wrapTurnAnimation
+    Right state -> 
+      state 
     Left error -> 
       Awaiting (Just error) player board
       # noEffects
@@ -79,15 +80,17 @@ update _ state =
   -- TODO: make this state transition impossible.
   noEffects state
 
-wrapTurnAnimation :: forall eff. EffModel HandA TurnAnimation.Action (eff)
-                  -> EffModel State Action (eff)
-wrapTurnAnimation = mapState Turning >>> mapEffects TurnAnimationAction
+withAnimateEffect :: forall eff state. Maybe Turn -> Maybe Turn -> state -> EffModel state Action (eff)
+withAnimateEffect turn1 turn2 state = 
+  { state: state 
+  , effects: [ later' (Turn.turnDelay turn1 turn2) (pure ContinueTurn) ]
+  }
 
-beginTurn :: Board.Player -> Board.PitRef -> Board -> Either Error HandA
+beginTurn :: forall eff. Player -> PitRef -> Board -> Either Error (EffModel State Action (eff))
 beginTurn player pitRef board = do 
   _ <- verifyPlayer 
   _ <- verifyPit
-  pure $ beginTurn' player pitRef board
+  pure $ beginTurn' player pitRef board 
     where verifyPlayer = if Board.belongsTo pitRef player
                             then Right unit
                             else Left "Cannot play opponent's pit"
@@ -95,13 +98,15 @@ beginTurn player pitRef board = do
                         then Right unit
                         else Left "Cannot play from empty pit"
 
-beginTurn' :: Board.Player -> Board.PitRef -> Board -> HandA
-beginTurn' player pitRef board = TurnAnimation.init hand rest
-  where hand = Hand.init player pitRef board
-        rest = Turn.unfoldTurns hand
+beginTurn' :: forall eff. Player -> PitRef -> Board -> EffModel State Action (eff)
+beginTurn' player pitRef board = 
+  Turning hand board Nothing rest
+  # withAnimateEffect Nothing (List.head rest)
+    where hand = Hand.init player pitRef 
+          rest = Turn.unfoldTurns $ Tuple hand board
 
-awaitOpponent :: Hand.State -> State 
-awaitOpponent hand = Awaiting Nothing (Hand.opponent hand) (getBoard hand)
+awaitOpponent :: Hand -> Board -> State 
+awaitOpponent hand = Awaiting Nothing (opponentOf hand.player) 
 
 -- View
 
@@ -110,25 +115,27 @@ view state =
   div [] 
     [ heading state
     , BoardView.view PlayerSelect state
-    , hand state
-    , lastTurn state
+    , viewHand state
+    , viewLastTurn state
     , errorDiv state
     ]
     where errorDiv (Awaiting (Just error) _ _) =
             div [] [ text $ "ERROR: " <> error ]
           errorDiv _ = 
             div [] [] 
-          heading (Turning handA) =
-            div [] [ text $ "Sowing - " <> show (length handA.remainingTurns) <> " turns left"]
+          heading (Turning hand board _ turns) =
+            div [] [ text $ "Sowing - " <> show (length turns) <> " turns left"]
           heading (Awaiting _ player _) =
             div [] [ text $ "Awaiting turn by " <> show player ]
-          hand (Turning handA) =
-            Hand.view handA.current
-          hand (Awaiting _ _ _) =
+          viewHand (Turning h _ _ _) =
+            div [] [ text $ "Hand by " <> show h.player  
+                         <> " containing " <> show h.seeds
+                         <> " seeds at " <> show h.pitRef ]
+          viewHand (Awaiting _ _ _) =
             div [] [ text "No hand" ]
-          lastTurn (Turning handA) =
-            case handA.lastTurn of 
+          viewLastTurn (Turning hand board lastTurn turns) =
+            case lastTurn of 
               Just t -> div [] [ text $ "Last turn: " <> show t ]
               Nothing -> div [] [ text "No last turn" ]
-          lastTurn _ =
+          viewLastTurn _ =
             div [] []
