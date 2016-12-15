@@ -25,7 +25,11 @@ data State
   = Turning Hand Board (Maybe Turn) (List Turn)
   | Awaiting (Maybe Error) Player Board 
 
-instance boardViewRound :: BoardView State where
+data Action 
+  = PlayerSelect PitRef
+  | ContinueTurn
+
+instance boardViewRound :: BoardView State Action where
   getBoard (Turning _ board _ _) = board
   getBoard (Awaiting _ _ board) = board
 
@@ -42,9 +46,8 @@ instance boardViewRound :: BoardView State where
           go t _ = t
   getTurn _ = Nothing
 
-data Action 
-  = PlayerSelect PitRef
-  | ContinueTurn
+  getPitAction (Turning _ _ _ _) = Nothing 
+  getPitAction (Awaiting _ _ _) = Just PlayerSelect
 
 init :: Player -> Board -> State
 init = Awaiting Nothing 
@@ -107,7 +110,7 @@ view :: State -> Html Action
 view state = 
   div [] 
     [ heading state
-    , BoardView.view PlayerSelect state
+    , BoardView.view state
     , viewHand state
     , viewLastTurn state
     , errorDiv state
