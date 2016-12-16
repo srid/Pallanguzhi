@@ -13,7 +13,7 @@ import App.Turn (Turn)
 import Data.Traversable (sequence)
 import Prelude (bind, const, pure, show, ($), (<), (<$>), (<<<), (<>), (==))
 import Pux.CSS (Color, backgroundColor, em, hsl, lighten, padding, px, rotateHue, style)
-import Pux.Html (Html, div, text)
+import Pux.Html (Attribute, Html, div, text)
 import Pux.Html.Events (onClick)
 
 class BoardView state action | state -> action where 
@@ -50,17 +50,21 @@ view :: forall action state. BoardView state action
 view state =
   div []
   [ viewStore state A
+  , viewHandRow A
   , viewRow A
   , viewRow B
+  , viewHandRow B
   , viewStore state B
   ]
   where
-    board = getBoard state
-    viewRow player = div [css] $ rows 
-      where rows = FM.mapRowWithIndex player viewCell' board.cells
-            viewCell' ref = viewCell state ref 
-            css = style $ do 
-              apply4 C.padding (em 0.5)
+    board = 
+      getBoard state
+    viewHandRow player = 
+      div [css] $ FM.mapRowWithIndex player (\ref pit -> viewHandInPit state ref) board.cells 
+    viewRow player = 
+      div [css] $ FM.mapRowWithIndex player (viewPit state) board.cells 
+    css = style $ do 
+            apply4 C.padding (em 0.5)
 
 viewStore :: forall action state. BoardView state action
           => state -> Row -> Html action
@@ -84,36 +88,53 @@ viewPlayer player = "Player " <> show player <> " " <> viewPlayerEmoji (Just pla
 viewPlayerEmoji :: Maybe Player -> String 
 viewPlayerEmoji (Just A) = "🐼"
 viewPlayerEmoji (Just B) = "🐔"
-viewPlayerEmoji Nothing = "❀"
+viewPlayerEmoji Nothing = numberPadded 0
 
-viewCellEmoji :: forall action state. BoardView state action 
+viewPitEmoji :: forall action state. BoardView state action 
               => state -> PitRef -> String 
-viewCellEmoji state ref = viewPlayerEmoji $ do
+viewPitEmoji state ref = viewPlayerEmoji $ do
   hand <- getHand state 
   if hand.pitRef == ref 
     then pure hand.player 
     else Nothing
 
-viewCell :: forall action state. BoardView state action
+viewPit :: forall action state. BoardView state action
           => state -> PitRef -> Pit -> Html action
-viewCell state ref count =
+viewPit state ref count =
   H.pre (getJusts [css, event]) [body]
   where
-    body = text $ viewCellEmoji state ref <> numberPadded count
+    body = text $ numberPadded count
     event = onClick <$> const <$> getPitAction state ref
-    numberPadded num = 
-      if num < 10 
-        then " " <> show num 
-        else show num
-    css = Just $ style do
-      C.display C.inline
-      C.fontSize (em 2.0)
-      C.backgroundColor color
-      C.padding (em 0.0) (em padding) (em 0.0) (em padding)
-      C.border C.solid (px 1.0) C.black
-      where
-        color = pitColor $ pitState state ref
-        padding = 0.5
+    color = pitColor $ pitState state ref
+    css = Just $ cellStyle color 
+
+numberPadded :: Int -> String 
+numberPadded n =
+  if n < 10 
+    then " " <> show n <> extra
+    else show n <> extra
+      where extra = "  "
+
+cellStyle :: forall a. Color -> Attribute a
+cellStyle color = style do
+    C.display C.inline
+    C.fontSize (em 2.0)
+    C.backgroundColor color
+    C.padding (em 0.0) (em padding) (em 0.0) (em padding)
+    C.border C.solid (px 1.0) C.black
+    where
+      padding = 0.5
+
+viewHandInPit :: forall action state. BoardView state action 
+              => state -> PitRef -> Html action 
+viewHandInPit state ref = 
+  H.pre [cellStyle color] [ text s ] 
+    where color = C.white
+          s = fromMaybe (viewPlayerEmoji Nothing) do 
+                hand <- getHand state   
+                if hand.pitRef == ref 
+                  then pure $ (viewPlayerEmoji $ Just hand.player) <> show hand.seeds 
+                  else Nothing
 
 getJusts :: forall a. Array (Maybe a) -> Array a 
 getJusts = fromMaybe [] <<< sequence <<< Array.filter isJust  
