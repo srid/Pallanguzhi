@@ -46,8 +46,8 @@ instance boardViewRound :: BoardView State Action where
           go t _ = t
   getTurn _ = Nothing
 
-  getPitAction (Turning _ _ _ _) = Nothing 
-  getPitAction (Awaiting _ _ _) = Just PlayerSelect
+  getPitAction (Turning _ _ _ _) _ = Nothing 
+  getPitAction (Awaiting _ _ _) ref = Just $ PlayerSelect ref
 
 init :: Player -> Board -> State
 init = Awaiting Nothing 

@@ -10,9 +10,8 @@ import App.Board (Pit, PitRef, Player, Board, getStore)
 import App.FixedMatrix72 (Row(B, A))
 import App.Hand (Hand)
 import App.Turn (Turn)
-import Data.Function (apply)
 import Data.Traversable (sequence)
-import Prelude (bind, const, show, ($), (<>), (<), (==), pure, (<$>), flip)
+import Prelude (bind, const, show, ($), (<>), (<), (==), pure, (<$>), (<<<))
 import Pux.CSS (Color, backgroundColor, em, hsl, lighten, padding, px, rotateHue, style)
 import Pux.Html (Html, div, text)
 import Pux.Html.Events (onClick)
@@ -25,7 +24,7 @@ class BoardView state action | state -> action where
   getHand :: state -> Maybe Hand
   getTurn :: state -> Maybe Turn
   getCurrentPlayer :: state -> Maybe Player
-  getPitAction :: state -> Maybe (PitRef -> action)
+  getPitAction :: state -> PitRef -> Maybe action
 
 pitState :: forall state action. BoardView state action => state -> PitRef -> PitState 
 pitState state ref = fromMaybe Normal $ do 
@@ -88,17 +87,15 @@ viewStore state player = div [css] [text s]
 viewCell :: forall action state. BoardView state action
           => state -> PitRef -> Pit -> Html action
 viewCell state ref count =
-  H.pre attrs [body]
+  H.pre (getJusts [css, event]) [body]
   where
     body = text $ numberPadded count
-    -- XXX: is this too clever?
-    attrs = fromMaybe [] $ sequence $ Array.filter isJust [css, event]
-    event = onClick <$> const <$> (flip apply) ref <$> getPitAction state
+    event = onClick <$> const <$> getPitAction state ref
     numberPadded num = 
       if num < 10 
         then " " <> show num 
         else show num
-    css = Just $ style $ do
+    css = Just $ style do
       C.display C.inline
       C.fontSize (em 2.0)
       C.backgroundColor color
@@ -108,6 +105,8 @@ viewCell state ref count =
         color = pitStateColor $ pitState state ref
         padding = 0.5
 
+getJusts :: forall a. Array (Maybe a) -> Array a 
+getJusts = fromMaybe [] <<< sequence <<< Array.filter isJust  
+
 apply4 :: forall a b. (a -> a -> a -> a -> b) -> a -> b
 apply4 f a = f a a a a
-
