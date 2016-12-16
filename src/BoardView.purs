@@ -11,7 +11,7 @@ import App.FixedMatrix72 (Row(B, A))
 import App.Hand (Hand)
 import App.Turn (Turn)
 import Data.Traversable (sequence)
-import Prelude (bind, const, show, ($), (<>), (<), (==), pure, (<$>), (<<<))
+import Prelude (bind, const, pure, show, ($), (<), (<$>), (<<<), (<>), (==))
 import Pux.CSS (Color, backgroundColor, em, hsl, lighten, padding, px, rotateHue, style)
 import Pux.Html (Html, div, text)
 import Pux.Html.Events (onClick)
@@ -34,9 +34,8 @@ pitState :: forall state action. BoardView state action
          => state -> PitRef -> PitState 
 pitState state ref = do 
   hand <- getHand state 
-  turn <- getTurn state 
   if ref == hand.pitRef 
-    then pure turn 
+    then getTurn state
     else Nothing 
 
 pitColor :: PitState -> Color 
@@ -66,8 +65,7 @@ view state =
 viewStore :: forall action state. BoardView state action
           => state -> Row -> Html action
 viewStore state player = div [css] [text s] 
-    where s = "Player " 
-                <> show player
+    where s = viewPlayer player
                 <> " with "
                 <> show seeds
                 <> " seeds."
@@ -80,12 +78,28 @@ viewStore state player = div [css] [text s]
                   then pitColor (Just Turn.Sow)
                   else pitColor Nothing 
 
+viewPlayer :: Player -> String 
+viewPlayer player = "Player " <> show player <> " " <> viewPlayerEmoji (Just player)
+
+viewPlayerEmoji :: Maybe Player -> String 
+viewPlayerEmoji (Just A) = "🐼"
+viewPlayerEmoji (Just B) = "🐔"
+viewPlayerEmoji Nothing = "❀"
+
+viewCellEmoji :: forall action state. BoardView state action 
+              => state -> PitRef -> String 
+viewCellEmoji state ref = viewPlayerEmoji $ do
+  hand <- getHand state 
+  if hand.pitRef == ref 
+    then pure hand.player 
+    else Nothing
+
 viewCell :: forall action state. BoardView state action
           => state -> PitRef -> Pit -> Html action
 viewCell state ref count =
   H.pre (getJusts [css, event]) [body]
   where
-    body = text $ numberPadded count
+    body = text $ viewCellEmoji state ref <> numberPadded count
     event = onClick <$> const <$> getPitAction state ref
     numberPadded num = 
       if num < 10 
@@ -106,3 +120,4 @@ getJusts = fromMaybe [] <<< sequence <<< Array.filter isJust
 
 apply4 :: forall a b. (a -> a -> a -> a -> b) -> a -> b
 apply4 f a = f a a a a
+
