@@ -16,9 +16,6 @@ import Pux.CSS (Color, backgroundColor, em, hsl, lighten, padding, px, rotateHue
 import Pux.Html (Html, div, text)
 import Pux.Html.Events (onClick)
 
--- TODO: drop in favour of direct use of Turn
-data PitState = Normal | Lifted | Captured | Sowed
-
 class BoardView state action | state -> action where 
   getBoard :: state -> Board 
   getHand :: state -> Maybe Hand
@@ -26,29 +23,28 @@ class BoardView state action | state -> action where
   getCurrentPlayer :: state -> Maybe Player
   getPitAction :: state -> PitRef -> Maybe action
 
-pitState :: forall state action. BoardView state action => state -> PitRef -> PitState 
-pitState state ref = fromMaybe Normal $ do 
-  hand <- getHand state 
-  turn <- getTurn state 
-  if ref == hand.pitRef 
-    then pure $ c turn 
-    else Nothing 
-      where c Turn.Capture = Captured 
-            c Turn.Lift = Lifted 
-            c Turn.Sow = Sowed 
-            c _ = Normal
-
 isPlaying :: forall state action. BoardView state action => state -> Player -> Boolean
 isPlaying state player = fromMaybe false $ do 
   currentPlayer <- getCurrentPlayer state
   pure $ player == currentPlayer
 
-pitStateColor :: PitState -> Color 
-pitStateColor = go 
-  where go Normal = hsl 40.0 1.0 0.3
-        go Captured = rotateHue 50.0 $ go Lifted
-        go Lifted = rotateHue 100.0 $ go Normal
-        go Sowed = lighten 0.3 $ go Normal
+type PitState = Maybe Turn
+
+pitState :: forall state action. BoardView state action 
+         => state -> PitRef -> PitState 
+pitState state ref = do 
+  hand <- getHand state 
+  turn <- getTurn state 
+  if ref == hand.pitRef 
+    then pure turn 
+    else Nothing 
+
+pitColor :: PitState -> Color 
+pitColor = go 
+  where go (Just Turn.Capture) = rotateHue 50.0 $ go (Just Turn.Lift)
+        go (Just Turn.Lift) = rotateHue 100.0 $ go Nothing
+        go (Just Turn.Sow) = lighten 0.3 $ go Nothing
+        go _ = hsl 40.0 1.0 0.3
 
 view :: forall action state. BoardView state action
      => state -> Html action 
@@ -81,8 +77,8 @@ viewStore state player = div [css] [text s]
             backgroundColor color 
             apply4 padding (em 0.5)
           color = if isPlaying state player 
-                  then pitStateColor Sowed
-                  else pitStateColor Normal 
+                  then pitColor (Just Turn.Sow)
+                  else pitColor Nothing 
 
 viewCell :: forall action state. BoardView state action
           => state -> PitRef -> Pit -> Html action
@@ -102,7 +98,7 @@ viewCell state ref count =
       C.padding (em 0.0) (em padding) (em 0.0) (em padding)
       C.border C.solid (px 1.0) C.black
       where
-        color = pitStateColor $ pitState state ref
+        color = pitColor $ pitState state ref
         padding = 0.5
 
 getJusts :: forall a. Array (Maybe a) -> Array a 
