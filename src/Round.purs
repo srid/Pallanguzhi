@@ -29,6 +29,8 @@ data Action
   = PlayerSelect PitRef
   | ContinueTurn
 
+type PuxUpdate eff = EffModel State Action (eff)
+
 instance boardViewRound :: BoardView State Action where
   getBoard (Turning _ board _ _) = board
   getBoard (Awaiting _ _ board) = board
@@ -52,37 +54,42 @@ instance boardViewRound :: BoardView State Action where
 init :: Player -> Board -> State
 init = Awaiting Nothing 
 
-update :: forall eff. Action -> State -> EffModel State Action (eff)
+update :: forall eff. Action -> State -> Either Board (PuxUpdate eff)
 update ContinueTurn (Turning hand board lastTurn nextTurns) = 
   case uncons nextTurns of 
     Nothing -> -- Turn over
       awaitOpponent hand board
       # noEffects
+      # Right
     Just { head, tail } ->
       go head tail $ Turn.runTurn head (Tuple hand board)  
         where go head tail (Tuple hand' board') = 
                 Turning hand' board' (Just head) tail 
                 # withAnimateEffect (Just head) (List.head tail)
+                # Right
 
 update (PlayerSelect pitRef) (Awaiting _ player board) =
   case beginTurn player pitRef board of 
     Right state -> 
       state 
+      # Right
     Left error -> 
       Awaiting (Just error) player board
       # noEffects
+      # Right
 
 update _ state =
   -- TODO: make this state transition impossible.
   noEffects state
+  # Right
 
-withAnimateEffect :: forall eff state. Maybe Turn -> Maybe Turn -> state -> EffModel state Action (eff)
+withAnimateEffect :: forall eff. Maybe Turn -> Maybe Turn -> State -> PuxUpdate eff
 withAnimateEffect turn1 turn2 state = 
   { state: state 
   , effects: [ later' (Turn.turnDelay turn1 turn2) (pure ContinueTurn) ]
   }
 
-beginTurn :: forall eff. Player -> PitRef -> Board -> Either Error (EffModel State Action (eff))
+beginTurn :: forall eff. Player -> PitRef -> Board -> Either Error (PuxUpdate eff)
 beginTurn player pitRef board = do 
   _ <- verifyPlayer 
   _ <- verifyPit
@@ -94,7 +101,7 @@ beginTurn player pitRef board = do
                         then Right unit
                         else Left "Cannot play from empty pit"
 
-beginTurn' :: forall eff. Player -> PitRef -> Board -> EffModel State Action (eff)
+beginTurn' :: forall eff. Player -> PitRef -> Board -> PuxUpdate eff
 beginTurn' player pitRef board = 
   Turning hand board Nothing rest
   # withAnimateEffect Nothing (List.head rest)
