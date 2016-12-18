@@ -9,6 +9,7 @@ import Prelude (($), (<$>), (#))
 import Data.Maybe
 import Data.Either (Either(..))
 import Pux.Html (Html)
+import Pux.Html as H
 import Pux (EffModel, mapEffects, mapState, noEffects)
 
 data State
@@ -21,7 +22,7 @@ data Action
 
 instance boardViewGame :: BoardView State Action where
   getBoard (PlayingRound round) = getBoard round
-  getBoard (EndRound board) = board 
+  getBoard (EndRound board) = board
 
   getCurrentPlayer (PlayingRound round) = getCurrentPlayer round
   getCurrentPlayer _ = Nothing
@@ -60,5 +61,13 @@ update _ state =
   # noEffects
 
 view :: State -> Html Action
-view (PlayingRound round) = RoundAction <$> Round.view round
-view state = BoardView.view state
+view (PlayingRound round) =
+  H.div []
+    [ H.h2 [] [ H.text "Playing round #1" ]
+    , RoundAction <$> Round.view round
+    ]
+view state =
+  H.div []
+    [ H.h2 [] [ H.text "Round over" ]
+    , BoardView.view state
+    ]
