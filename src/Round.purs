@@ -111,8 +111,6 @@ view state =
   div [] 
     [ heading state
     , BoardView.view state
-    , viewHand state
-    , viewLastTurn state
     , errorDiv state
     ]
     where errorDiv (Awaiting (Just error) _ _) =
@@ -120,18 +118,11 @@ view state =
           errorDiv _ = 
             div [] [] 
           heading (Turning hand board _ turns) =
-            div [] [ text $ "Sowing - " <> show (length turns) <> " turns left"]
+            div [] [ text $ BoardView.viewPlayer hand.player 
+                         <> " is sowing " 
+                         <> "with " 
+                         <> show hand.seeds 
+                         <> " seeds in hand: "
+                         <> show (length turns) <> " turns left"]
           heading (Awaiting _ player _) =
-            div [] [ text $ "Awaiting turn by " <> show player ]
-          viewHand (Turning h _ _ _) =
-            div [] [ text $ "Hand by " <> show h.player  
-                         <> " containing " <> show h.seeds
-                         <> " seeds at " <> show h.pitRef ]
-          viewHand (Awaiting _ _ _) =
-            div [] [ text "No hand" ]
-          viewLastTurn (Turning hand board lastTurn turns) =
-            case lastTurn of 
-              Just t -> div [] [ text $ "Last turn: " <> show t ]
-              Nothing -> div [] [ text "No last turn" ]
-          viewLastTurn _ =
-            div [] []
+            div [] [ text $ "Awaiting turn by " <> BoardView.viewPlayer player ]

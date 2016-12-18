@@ -113,8 +113,8 @@ viewPlayer :: Player -> String
 viewPlayer player = viewPlayerEmoji player
 
 viewPlayerEmoji :: Player -> String 
-viewPlayerEmoji A = "🐼"
-viewPlayerEmoji B = "🐔"
+viewPlayerEmoji A = "🐄"
+viewPlayerEmoji B = "🐓"
 
 cellStyle :: forall a. Color -> Display -> Attribute a
 cellStyle color display = style do
