@@ -39,11 +39,10 @@ pitState state ref = do
     else Nothing 
 
 pitColor :: PitState -> Color 
-pitColor = go 
-  where go (Just Turn.Capture) = rotateHue 50.0 $ go (Just Turn.Lift)
-        go (Just Turn.Lift) = rotateHue 100.0 $ go Nothing
-        go (Just Turn.Sow) = lighten 0.3 $ go Nothing
-        go _ = hsl 40.0 1.0 0.3
+pitColor (Just Turn.Capture) = hsl 300.0 1.0 0.3
+pitColor (Just Turn.Lift) = hsl 150.0 1.0 0.3
+pitColor (Just Turn.Sow) = lighten 0.3 $ pitColor Nothing
+pitColor _ = hsl 70.0 1.0 0.3
 
 view :: forall action state. BoardView state action
      => state -> Html action 
@@ -99,7 +98,7 @@ viewPitEmoji state ref = viewPlayerEmoji $ do
     else Nothing
 
 viewPit :: forall action state. BoardView state action
-          => state -> PitRef -> Pit -> Html action
+        => state -> PitRef -> Pit -> Html action
 viewPit state ref count =
   H.pre (getJusts [css, event]) [body]
   where
