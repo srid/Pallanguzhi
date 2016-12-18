@@ -11,9 +11,9 @@ import App.FixedMatrix72 (Row(B, A))
 import App.Hand (Hand)
 import App.Turn (Turn)
 import Data.Traversable (sequence)
-import Prelude (bind, const, show, ($), (<>), (<), (==), pure, (<$>), (<<<))
-import Pux.CSS (Color, backgroundColor, em, hsl, lighten, padding, px, rotateHue, style)
-import Pux.Html (Html, div, text)
+import Prelude (bind, const, pure, show, ($), (<), (<$>), (<<<), (<>), (==), (#))
+import Pux.CSS (Color, Display, em, hsl, px, style)
+import Pux.Html (Attribute, Html, div, text)
 import Pux.Html.Events (onClick)
 
 class BoardView state action | state -> action where 
@@ -34,17 +34,15 @@ pitState :: forall state action. BoardView state action
          => state -> PitRef -> PitState 
 pitState state ref = do 
   hand <- getHand state 
-  turn <- getTurn state 
   if ref == hand.pitRef 
-    then pure turn 
+    then getTurn state
     else Nothing 
 
 pitColor :: PitState -> Color 
-pitColor = go 
-  where go (Just Turn.Capture) = rotateHue 50.0 $ go (Just Turn.Lift)
-        go (Just Turn.Lift) = rotateHue 100.0 $ go Nothing
-        go (Just Turn.Sow) = lighten 0.3 $ go Nothing
-        go _ = hsl 40.0 1.0 0.3
+pitColor (Just Turn.Capture) = hsl 300.0 1.0 0.3
+pitColor (Just Turn.Lift) = hsl 150.0 1.0 0.3
+pitColor (Just Turn.Sow) = C.lighten 0.4 $ pitColor Nothing
+pitColor _ = hsl 70.0 1.0 0.3
 
 view :: forall action state. BoardView state action
      => state -> Html action 
@@ -56,53 +54,87 @@ view state =
   , viewStore state B
   ]
   where
-    board = getBoard state
-    viewRow player = div [css] $ rows 
-      where rows = FM.mapRowWithIndex player viewCell' board.cells
-            viewCell' ref = viewCell state ref 
-            css = style $ do 
-              apply4 C.padding (em 0.5)
+    board = 
+      getBoard state
+    viewRow player = 
+      div [] $ FM.mapRowWithIndex player (viewPit state) board.cells 
 
 viewStore :: forall action state. BoardView state action
           => state -> Row -> Html action
-viewStore state player = div [css] [text s] 
-    where s = "Player " 
-                <> show player
-                <> " with "
-                <> show seeds
-                <> " seeds."
-          seeds = getStore player board
-          board = getBoard state
-          css = style $ do 
-            backgroundColor color 
-            apply4 padding (em 0.5)
+viewStore state player = 
+  H.pre [css] [ text s ]
+    where s = viewPlayer player <> showPadded seeds
+          seeds = getStore player board 
+          board = getBoard state 
           color = if isPlaying state player 
-                  then pitColor (Just Turn.Sow)
-                  else pitColor Nothing 
+                    then pitColor (Just Turn.Sow)
+                    else pitColor Nothing # C.darken 0.1
+          css = style do 
+            C.display C.block
+            C.textAlign C.center
+            C.fontSize (em 2.0)
+            C.backgroundColor color
+            C.width (em 5.0)
+            C.margin (em 1.0) (em 0.0) (em 1.0) (em 8.5)
+            C.border C.solid (px 1.0) C.black
 
-viewCell :: forall action state. BoardView state action
-          => state -> PitRef -> Pit -> Html action
-viewCell state ref count =
+
+viewPit :: forall action state. BoardView state action
+        => state -> PitRef -> Pit -> Html action
+viewPit state ref count =
   H.pre (getJusts [css, event]) [body]
   where
-    body = text $ numberPadded count
+    body = text $ showPadded count
     event = onClick <$> const <$> getPitAction state ref
-    numberPadded num = 
-      if num < 10 
-        then " " <> show num 
-        else show num
-    css = Just $ style do
-      C.display C.inline
-      C.fontSize (em 2.0)
+    color = pitColor $ pitState state ref
+    css = Just $ style do 
+      C.display C.inlineFlex
+      C.position C.relative
+      C.width boxSize
+      C.height boxSize
+      C.textAlign C.center
+      C.fontSize (em 2.5)
       C.backgroundColor color
       C.padding (em 0.0) (em padding) (em 0.0) (em padding)
+      apply4 C.margin (em 0.0)
       C.border C.solid (px 1.0) C.black
       where
-        color = pitColor $ pitState state ref
         padding = 0.5
+        boxSize = (em 1.5)
+
+showPadded :: Int -> String 
+showPadded n =
+  if n < 10 
+    then " " <> show n <> extra
+    else show n <> extra
+      where extra = "  "
+
+viewPlayer :: Player -> String 
+viewPlayer player = viewPlayerEmoji player
+
+viewPlayerEmoji :: Player -> String 
+viewPlayerEmoji A = "🐄"
+viewPlayerEmoji B = "🐓"
+
+cellStyle :: forall a. Color -> Display -> Attribute a
+cellStyle color display = style do
+    C.display display
+    C.position C.relative
+    C.width boxSize
+    C.height boxSize
+    C.textAlign C.center
+    C.fontSize (em 2.5)
+    C.backgroundColor color
+    C.padding (em 0.0) (em padding) (em 0.0) (em padding)
+    apply4 C.margin (em 0.0)
+    C.border C.solid (px 1.0) C.black
+    where
+      padding = 0.5
+      boxSize = (em 1.5)
 
 getJusts :: forall a. Array (Maybe a) -> Array a 
 getJusts = fromMaybe [] <<< sequence <<< Array.filter isJust  
 
 apply4 :: forall a b. (a -> a -> a -> a -> b) -> a -> b
 apply4 f a = f a a a a
+
