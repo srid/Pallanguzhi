@@ -1,5 +1,6 @@
 module App.Game where
 
+import App.Config (Config)
 import App.Board as Board
 import App.Round as Round
 import App.BoardView as BoardView
@@ -11,10 +12,6 @@ import Data.Either (Either(..))
 import Pux.Html (Html)
 import Pux.Html as H
 import Pux (EffModel, mapEffects, mapState, noEffects)
-
-type Config =
-  { fastTurn :: Boolean
-  }
 
 data State
   = PlayingRound Config Round.State
@@ -46,7 +43,7 @@ init = PlayingRound config $ Round.init A Board.init
 
 update :: forall eff. Action -> State -> EffModel State Action (eff)
 update (RoundAction action) (PlayingRound config round) =
-  case Round.update action round of
+  case Round.update config action round of
     Right result ->
       result
       # mapEffects RoundAction

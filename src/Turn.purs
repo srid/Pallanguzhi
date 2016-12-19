@@ -25,16 +25,6 @@ runTurn Capture = capture
 runTurn Lift = lift
 runTurn Sow = sow
 
-turnDelay :: Maybe Turn -> Maybe Turn -> Int
--- turnDelay _ _ = 0
-turnDelay (Just Capture) _ = 500
-turnDelay _ (Just Capture) = 500
-turnDelay (Just Lift) _ = 500
-turnDelay _ (Just Lift) = 500
-turnDelay (Just Advance) _ = 100
-turnDelay (Just Sow) _ = 50
-turnDelay Nothing _ = 100
-
 unfoldTurns :: State -> List Turn
 unfoldTurns = concat <<< unfoldr' nextTurns
 
