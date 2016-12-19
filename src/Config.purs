@@ -12,7 +12,9 @@ type Config =
 turnDelay :: forall state action. BoardView state action
           => Config -> state -> Int
 turnDelay config state =
-  go $ getTurn state
+  if config.fastTurn
+    then 0
+    else go $ getTurn state
     where go (Just Capture) = 500
           go (Just Lift) = 500
           go (Just Sow) = 50
