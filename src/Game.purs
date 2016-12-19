@@ -12,47 +12,52 @@ import Pux.Html (Html)
 import Pux.Html as H
 import Pux (EffModel, mapEffects, mapState, noEffects)
 
+type Config =
+  { fastTurn :: Boolean
+  }
+
 data State
-  = PlayingRound Round.State
-  | EndRound Board.Board
+  = PlayingRound Config Round.State
+  | EndRound Config Board.Board
 
 data Action
   = RoundAction Round.Action
   | NextRound
 
 instance boardViewGame :: BoardView State Action where
-  getBoard (PlayingRound round) = getBoard round
-  getBoard (EndRound board) = board
+  getBoard (PlayingRound _ round) = getBoard round
+  getBoard (EndRound _ board) = board
 
-  getCurrentPlayer (PlayingRound round) = getCurrentPlayer round
+  getCurrentPlayer (PlayingRound _ round) = getCurrentPlayer round
   getCurrentPlayer _ = Nothing
 
-  getHand (PlayingRound round) = getHand round
+  getHand (PlayingRound _ round) = getHand round
   getHand _ = Nothing
 
-  getTurn (PlayingRound round) = getTurn round
+  getTurn (PlayingRound _ round) = getTurn round
   getTurn _ = Nothing
 
-  getPitAction (PlayingRound round) ref = RoundAction <$> getPitAction round ref
+  getPitAction (PlayingRound _ round) ref = RoundAction <$> getPitAction round ref
   getPitAction _ _ = Nothing
 
 init :: State
-init = PlayingRound $ Round.init A Board.init
+init = PlayingRound config $ Round.init A Board.init
+        where config = { fastTurn: false }
 
 update :: forall eff. Action -> State -> EffModel State Action (eff)
-update (RoundAction action) (PlayingRound round) =
+update (RoundAction action) (PlayingRound config round) =
   case Round.update action round of
     Right result ->
       result
       # mapEffects RoundAction
-      # mapState PlayingRound
+      # mapState (PlayingRound config)
     Left board -> -- Round over
-      EndRound board
+      EndRound config board
       # noEffects
 
-update NextRound (EndRound board) =
+update NextRound (EndRound config board) =
   Round.init A board -- TODO
-  # PlayingRound
+  # PlayingRound config
   # noEffects
 
 update _ state =
@@ -61,7 +66,7 @@ update _ state =
   # noEffects
 
 view :: State -> Html Action
-view (PlayingRound round) =
+view (PlayingRound _ round) =
   H.div []
     [ H.h2 [] [ H.text "Playing round #1" ]
     , RoundAction <$> Round.view round
