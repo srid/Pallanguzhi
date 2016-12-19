@@ -1,6 +1,8 @@
 -- / Game round
 module App.Round where
 
+import App.Config (Config)
+import App.Config as Config
 import App.Board as Board
 import App.BoardView as BoardView
 import App.Hand as Hand
@@ -56,8 +58,8 @@ instance boardViewRound :: BoardView State Action where
 init :: Player -> Board -> State
 init = Awaiting Nothing
 
-update :: forall eff. Action -> State -> Either Board (PuxUpdate eff)
-update ContinueTurn (Turning hand board lastTurn nextTurns) =
+update :: forall eff. Config -> Action -> State -> Either Board (PuxUpdate eff)
+update config ContinueTurn (Turning hand board lastTurn nextTurns) =
   case uncons nextTurns of
     Nothing -> -- Turn over
       if allPitsEmptyFor (opponentOf hand.player) board
@@ -68,12 +70,11 @@ update ContinueTurn (Turning hand board lastTurn nextTurns) =
     Just { head, tail } ->
       go head tail $ Turn.runTurn head (Tuple hand board)
         where go head tail (Tuple hand' board') =
-                Turning hand' board' (Just head) tail
-                # withAnimateEffect (Just head) (List.head tail)
+                turning config hand' board' (Just head) tail
                 # Right
 
-update (PlayerSelect pitRef) (Awaiting _ player board) =
-  case beginTurn player pitRef board of
+update config (PlayerSelect pitRef) (Awaiting _ player board) =
+  case beginTurn config player pitRef board of
     Right state ->
       state
       # Right
@@ -82,22 +83,25 @@ update (PlayerSelect pitRef) (Awaiting _ player board) =
       # noEffects
       # Right
 
-update _ state =
+update _ _ state =
   -- TODO: make this state transition impossible.
   noEffects state
   # Right
 
-withAnimateEffect :: forall eff. Maybe Turn -> Maybe Turn -> State -> PuxUpdate eff
-withAnimateEffect turn1 turn2 state =
-  { state: state
-  , effects: [ later' (Turn.turnDelay turn1 turn2) (pure ContinueTurn) ]
-  }
+turning :: forall eff. Config -> Hand -> Board -> (Maybe Turn) -> (List Turn) -> PuxUpdate eff
+turning config hand board turn rest =
+  Turning hand board turn rest
+  # withAnimateEffect
+    where withAnimateEffect state =
+            { state: state
+            , effects: [ later' (Config.turnDelay config state) (pure ContinueTurn) ]
+            }
 
-beginTurn :: forall eff. Player -> PitRef -> Board -> Either Error (PuxUpdate eff)
-beginTurn player pitRef board = do
+beginTurn :: forall eff. Config -> Player -> PitRef -> Board -> Either Error (PuxUpdate eff)
+beginTurn config player pitRef board = do
   _ <- verifyPlayer
   _ <- verifyPit
-  pure $ beginTurn' player pitRef board
+  pure $ beginTurn' config player pitRef board
     where verifyPlayer = if Board.belongsTo pitRef player
                             then Right unit
                             else Left "Cannot play opponent's pit"
@@ -105,10 +109,9 @@ beginTurn player pitRef board = do
                         then Right unit
                         else Left "Cannot play from empty pit"
 
-beginTurn' :: forall eff. Player -> PitRef -> Board -> PuxUpdate eff
-beginTurn' player pitRef board =
-  Turning hand board Nothing rest
-  # withAnimateEffect Nothing (List.head rest)
+beginTurn' :: forall eff. Config -> Player -> PitRef -> Board -> PuxUpdate eff
+beginTurn' config player pitRef board =
+  turning config hand board Nothing rest
     where hand = Hand.init player pitRef
           rest = Turn.unfoldTurns $ Tuple hand board
 

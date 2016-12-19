@@ -1,4 +1,4 @@
-module App.BoardView where 
+module App.BoardView where
 
 import Data.Maybe
 import App.FixedMatrix72 as FM
@@ -16,36 +16,36 @@ import Pux.CSS (Color, Display, em, hsl, px, style)
 import Pux.Html (Attribute, Html, div, text)
 import Pux.Html.Events (onClick)
 
-class BoardView state action | state -> action where 
-  getBoard :: state -> Board 
+class BoardView state action | state -> action where
+  getBoard :: state -> Board
   getHand :: state -> Maybe Hand
   getTurn :: state -> Maybe Turn
   getCurrentPlayer :: state -> Maybe Player
   getPitAction :: state -> PitRef -> Maybe action
 
 isPlaying :: forall state action. BoardView state action => state -> Player -> Boolean
-isPlaying state player = fromMaybe false $ do 
+isPlaying state player = fromMaybe false $ do
   currentPlayer <- getCurrentPlayer state
   pure $ player == currentPlayer
 
 type PitState = Maybe Turn
 
-pitState :: forall state action. BoardView state action 
-         => state -> PitRef -> PitState 
-pitState state ref = do 
-  hand <- getHand state 
-  if ref == hand.pitRef 
+pitState :: forall state action. BoardView state action
+         => state -> PitRef -> PitState
+pitState state ref = do
+  hand <- getHand state
+  if ref == hand.pitRef
     then getTurn state
-    else Nothing 
+    else Nothing
 
-pitColor :: PitState -> Color 
+pitColor :: PitState -> Color
 pitColor (Just Turn.Capture) = hsl 300.0 1.0 0.3
 pitColor (Just Turn.Lift) = hsl 150.0 1.0 0.3
 pitColor (Just Turn.Sow) = C.lighten 0.4 $ pitColor Nothing
 pitColor _ = hsl 70.0 1.0 0.3
 
 view :: forall action state. BoardView state action
-     => state -> Html action 
+     => state -> Html action
 view state =
   div []
   [ viewStore state A
@@ -54,22 +54,22 @@ view state =
   , viewStore state B
   ]
   where
-    board = 
+    board =
       getBoard state
-    viewRow player = 
-      div [] $ FM.mapRowWithIndex player (viewPit state) board.cells 
+    viewRow player =
+      div [] $ FM.mapRowWithIndex player (viewPit state) board.cells
 
 viewStore :: forall action state. BoardView state action
           => state -> Row -> Html action
-viewStore state player = 
+viewStore state player =
   H.pre [css] [ text s ]
     where s = viewPlayer player <> showPadded seeds
-          seeds = getStore player board 
-          board = getBoard state 
-          color = if isPlaying state player 
+          seeds = getStore player board
+          board = getBoard state
+          color = if isPlaying state player
                     then pitColor (Just Turn.Sow)
                     else pitColor Nothing # C.darken 0.1
-          css = style do 
+          css = style do
             C.display C.block
             C.textAlign C.center
             C.fontSize (em 2.0)
@@ -87,7 +87,7 @@ viewPit state ref count =
     body = text $ showPadded count
     event = onClick <$> const <$> getPitAction state ref
     color = pitColor $ pitState state ref
-    css = Just $ style do 
+    css = Just $ style do
       C.display C.inlineFlex
       C.position C.relative
       C.width boxSize
@@ -102,17 +102,17 @@ viewPit state ref count =
         padding = 0.5
         boxSize = (em 1.5)
 
-showPadded :: Int -> String 
+showPadded :: Int -> String
 showPadded n =
-  if n < 10 
+  if n < 10
     then " " <> show n <> extra
     else show n <> extra
       where extra = "  "
 
-viewPlayer :: Player -> String 
+viewPlayer :: Player -> String
 viewPlayer player = viewPlayerEmoji player
 
-viewPlayerEmoji :: Player -> String 
+viewPlayerEmoji :: Player -> String
 viewPlayerEmoji A = "🐄"
 viewPlayerEmoji B = "🐓"
 
@@ -132,9 +132,8 @@ cellStyle color display = style do
       padding = 0.5
       boxSize = (em 1.5)
 
-getJusts :: forall a. Array (Maybe a) -> Array a 
-getJusts = fromMaybe [] <<< sequence <<< Array.filter isJust  
+getJusts :: forall a. Array (Maybe a) -> Array a
+getJusts = fromMaybe [] <<< sequence <<< Array.filter isJust
 
 apply4 :: forall a b. (a -> a -> a -> a -> b) -> a -> b
 apply4 f a = f a a a a
-
