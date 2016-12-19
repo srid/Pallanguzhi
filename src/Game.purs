@@ -1,6 +1,7 @@
 module App.Game where
 
 import App.Config (Config)
+import App.Config as Config
 import App.Board as Board
 import App.Round as Round
 import App.BoardView as BoardView
@@ -63,13 +64,15 @@ update _ state =
   # noEffects
 
 view :: State -> Html Action
-view (PlayingRound _ round) =
+view (PlayingRound config round) =
   H.div []
     [ H.h2 [] [ H.text "Playing round #1" ]
     , RoundAction <$> Round.view round
+    , Config.view config
     ]
-view state =
+view state@(EndRound config _) =
   H.div []
     [ H.h2 [] [ H.text "Round over" ]
     , BoardView.view state
+    , Config.view config
     ]

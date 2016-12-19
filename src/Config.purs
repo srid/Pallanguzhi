@@ -1,9 +1,13 @@
 module App.Config where
 
-import Prelude (($))
-import Data.Maybe (Maybe(..))
+import Pux.Html as H
+-- import Pux.Html.Attributes as A
+-- import Pux.Html.Events as E
+import Pux.Html (Html)
 import App.BoardView (class BoardView, getTurn)
 import App.Turn (Turn(..))
+import Data.Maybe (Maybe(..))
+import Prelude (($))
 
 type Config =
   { fastTurn :: Boolean
@@ -19,3 +23,11 @@ turnDelay config state =
           go (Just Lift) = 500
           go (Just Sow) = 50
           go _ = 100
+
+view :: forall action. Config -> Html action
+view config =
+  H.div [] []
+    -- TODO: UI for config toggling
+    -- [ H.text $ "Enable fast turn:"
+    -- , H.option [A.checked config.fastTurn] []
+    -- ]
