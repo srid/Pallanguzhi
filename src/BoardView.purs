@@ -12,7 +12,7 @@ import App.Hand (Hand)
 import App.Turn (Turn)
 import Data.Traversable (sequence)
 import Prelude (bind, const, pure, show, ($), (<), (<$>), (<<<), (<>), (==), (#))
-import Pux.CSS (Color, Display, em, hsl, px, style)
+import Pux.CSS (Color, Display, em, pct, hsl, px, style)
 import Pux.Html (Attribute, Html, div, text)
 import Pux.Html.Events (onClick)
 
@@ -70,37 +70,37 @@ viewStore state player =
                     then pitColor (Just Turn.Sow)
                     else pitColor Nothing # C.darken 0.1
           css = style do
-            C.display C.block
+            C.display C.inlineFlex
             C.textAlign C.center
-            C.fontSize (em 2.0)
+            C.fontSize (em 2.5)
             C.backgroundColor color
-            C.width (em 5.0)
-            C.margin (em 1.0) (em 0.0) (em 1.0) (em 8.5)
+            C.width (pct 20.0)
+            C.height (em 2.0)
+            C.marginLeft (pct 35.0)
             C.border C.solid (px 1.0) C.black
+            C.padding (em 0.0) (em padding) (em 0.0) (em padding)
+              where padding = 0.5
 
 
 viewPit :: forall action state. BoardView state action
         => state -> PitRef -> Pit -> Html action
 viewPit state ref count =
-  H.pre (getJusts [css, event]) [body]
+  H.div (getJusts [css, event]) [body]
   where
-    body = text $ showPadded count
+    body = div [style do apply4 C.margin (em 1.0) ] [text $ showPadded count]
     event = onClick <$> const <$> getPitAction state ref
     color = pitColor $ pitState state ref
     css = Just $ style do
       C.display C.inlineFlex
-      C.position C.relative
-      C.width boxSize
-      C.height boxSize
+      C.width (pct 10.0)
+      C.height (em 3.0)
       C.textAlign C.center
       C.fontSize (em 2.5)
       C.backgroundColor color
       C.padding (em 0.0) (em padding) (em 0.0) (em padding)
       apply4 C.margin (em 0.0)
       C.border C.solid (px 1.0) C.black
-      where
-        padding = 0.5
-        boxSize = (em 1.5)
+        where padding = 0.5
 
 showPadded :: Int -> String
 showPadded n =
@@ -115,22 +115,6 @@ viewPlayer player = viewPlayerEmoji player
 viewPlayerEmoji :: Player -> String
 viewPlayerEmoji A = "🐄"
 viewPlayerEmoji B = "🐓"
-
-cellStyle :: forall a. Color -> Display -> Attribute a
-cellStyle color display = style do
-    C.display display
-    C.position C.relative
-    C.width boxSize
-    C.height boxSize
-    C.textAlign C.center
-    C.fontSize (em 2.5)
-    C.backgroundColor color
-    C.padding (em 0.0) (em padding) (em 0.0) (em padding)
-    apply4 C.margin (em 0.0)
-    C.border C.solid (px 1.0) C.black
-    where
-      padding = 0.5
-      boxSize = (em 1.5)
 
 getJusts :: forall a. Array (Maybe a) -> Array a
 getJusts = fromMaybe [] <<< sequence <<< Array.filter isJust
