@@ -35,12 +35,9 @@ nextTurns state@(Tuple hand@{player, seeds, pitRef} board) =
     where f 0 0 0 _ =
             -- No hand, next two pits empty. End turn.
             Nil # end
-          f 0 0 _ 0 =
+          f 0 0 _ _ =
             -- Capture and end turn
             Advance : Capture : Nil # end
-          f 0 0 _ _ =
-            -- Capture and continue
-            Advance : Capture : Advance : Nil # continue
           f 0 _ _ _ =
             -- Lift and continue digging
             Lift : Advance : Nil # continue

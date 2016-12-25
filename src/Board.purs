@@ -16,7 +16,7 @@ type Player = FM.Row
 
 init :: Board
 init =
-  { cells: FM.init 6
+  { cells: FM.init 5
   , storeA: 0
   , storeB: 0
   }
