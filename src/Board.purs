@@ -28,17 +28,20 @@ cols = 7
 rowCount :: Int
 rowCount = cols * initPit
 
-init :: Board
-init =
-  { cells: FM.init initPit
+init' :: Int -> Board
+init' perPit =
+  { cells: FM.init perPit
   , blockedCells: []
   , storeA: 0
   , storeB: 0
   }
 
+init :: Board
+init = init' initPit
+
 initWith' :: Int -> Int -> Int -> Board
 initWith' a b perPit =
-  init
+  init' 0
   # store A a
   # store B b
   # refillPlayer A
