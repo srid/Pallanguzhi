@@ -2,26 +2,27 @@ module App.Turn where
 
 import Data.List
 import App.Board as Board
-import App.Board (Board)
+import App.Board (Board, Player)
+import App.FixedMatrix72 (Ref(..), getRow)
 import App.Hand (Hand)
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Data.Unfoldable (class Unfoldable, unfoldr)
-import Prelude (class Show, flip, map, (#), ($), (+), (-), (<<<))
+import Prelude (class Show, show, flip, map, (#), ($), (+), (-), (<<<), (<>))
 
-data Turn = Advance | Capture | Lift | Sow
+data Turn = Advance | Capture Player | Lift | Sow
 
 type State = Tuple Hand Board
 
 instance showTurn :: Show Turn where
   show Advance = "Advance"
-  show Capture = "Capture"
+  show (Capture player) = "Capture:" <> show player
   show Lift = "Lift"
   show Sow = "Sow"
 
 runTurn :: Turn -> State -> State
 runTurn Advance = advance
-runTurn Capture = capture
+runTurn (Capture player) = capture player
 runTurn Lift = lift
 runTurn Sow = sow
 
@@ -37,13 +38,14 @@ nextTurns state@(Tuple hand@{player, seeds, pitRef} board) =
             Nil # end
           f 0 0 _ _ =
             -- Capture and end turn
-            Advance : Capture : Nil # end
+            Advance : Capture hand.player : Nil # end
           f 0 _ _ _ =
             -- Lift and continue digging
             Lift : Advance : Nil # continue
           f _ 3 _ _ =
             -- Pasu; capture
-            Sow : Capture : Advance : Nil # continue
+            Sow : Capture (getPlayer hand.pitRef) : Advance : Nil # continue
+              where getPlayer (Ref { row, idx}) = row
           f _ _ _ _ =
             -- Sow 1 seed and continue digging
             Sow : Advance : Nil # continue
@@ -61,9 +63,9 @@ advance :: State -> State
 advance (Tuple hand board) = Tuple hand' board
   where hand' = hand { pitRef = Board.nextRef hand.pitRef board }
 
-capture :: State -> State
-capture (Tuple hand board) = Tuple hand board'
-  where board' = Board.storeFromPit hand.player board hand.pitRef
+capture :: Player -> State -> State
+capture player (Tuple hand board) = Tuple hand board'
+  where board' = Board.storeFromPit player board hand.pitRef
 
 lift :: State -> State
 lift (Tuple hand board) = Tuple hand' board'

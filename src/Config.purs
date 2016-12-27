@@ -23,7 +23,7 @@ turnDelay config state =
   if config.fastTurn
     then 0
     else go $ getTurn state
-    where go (Just Capture) = 500
+    where go (Just (Capture _)) = 500
           go (Just Lift) = 500
           go (Just Sow) = 50
           go _ = 100

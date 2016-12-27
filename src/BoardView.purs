@@ -40,7 +40,7 @@ pitState state ref = do
     else Nothing
 
 pitColor :: PitState -> Color
-pitColor (Just Turn.Capture) = hsl 300.0 1.0 0.3
+pitColor (Just (Turn.Capture _)) = hsl 300.0 1.0 0.3
 pitColor (Just Turn.Lift) = hsl 150.0 1.0 0.3
 pitColor (Just Turn.Sow) = C.lighten 0.4 $ pitColor Nothing
 pitColor _ = hsl 70.0 1.0 0.3
