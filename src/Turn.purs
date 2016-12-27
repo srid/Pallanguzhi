@@ -59,11 +59,11 @@ applyTurns turns s = foldl (flip runTurn) s turns
 
 advance :: State -> State
 advance (Tuple hand board) = Tuple hand' board
-  where hand' = hand { pitRef = Board.nextRef hand.pitRef }
+  where hand' = hand { pitRef = Board.nextRef hand.pitRef board }
 
 capture :: State -> State
 capture (Tuple hand board) = Tuple hand board'
-  where board' = Board.storeFromPit hand.player board hand.pitRef 
+  where board' = Board.storeFromPit hand.player board hand.pitRef
 
 lift :: State -> State
 lift (Tuple hand board) = Tuple hand' board'

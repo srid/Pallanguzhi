@@ -1,12 +1,12 @@
 module App.Board where
 
+import Data.Foldable
 import App.FixedMatrix72 as FM
 import App.FixedMatrix72 (Ref(Ref), Row(..))
+import Control.MonadZero (guard)
 import Data.Array ((..), (:))
-import Data.Foldable
 import Data.Maybe (Maybe(..))
 import Prelude (bind, const, pure, (#), ($), (*), (+), (-), (<), (<#>), (<$>), (==), (>=))
-import Control.MonadZero (guard)
 
 type Board =
   { cells :: FM.FixedMatrix72 Pit
@@ -66,11 +66,18 @@ opponentOf :: Player -> Player
 opponentOf A = B
 opponentOf B = A
 
-nextRef :: PitRef -> PitRef
-nextRef (Ref { row: A, idx: 0 })   = Ref { row: B, idx: 0 }
-nextRef (Ref { row: A, idx: idx }) = Ref { row: A, idx: idx - 1 }
-nextRef (Ref { row: B, idx: 6 })   = Ref { row: A, idx: 6 }
-nextRef (Ref { row: B, idx: idx }) = Ref { row: B, idx: idx + 1 }
+nextRef :: PitRef -> Board -> PitRef
+nextRef ref board =
+  if elem next board.blockedCells
+    then nextRef next board
+    else next
+    where next = nextRef' ref
+
+nextRef' :: PitRef -> PitRef
+nextRef' (Ref { row: A, idx: 0 })   = Ref { row: B, idx: 0 }
+nextRef' (Ref { row: A, idx: idx }) = Ref { row: A, idx: idx - 1 }
+nextRef' (Ref { row: B, idx: 6 })   = Ref { row: A, idx: 6 }
+nextRef' (Ref { row: B, idx: idx }) = Ref { row: B, idx: idx + 1 }
 
 blockPit :: PitRef -> Board -> Board
 blockPit ref board = board { blockedCells = ref : board.blockedCells }
@@ -83,11 +90,11 @@ mapPit ref f board = f $ lookup ref board
 
 mapPit2 :: forall a. PitRef -> (Pit -> Pit -> a) -> Board -> a
 mapPit2 ref1 f board = mapPit ref1 g board
-  where g pit1 = mapPit (nextRef ref1) (f pit1) board
+  where g pit1 = mapPit (nextRef ref1 board) (f pit1) board
 
 mapPit3 :: forall a. PitRef -> (Pit -> Pit -> Pit -> a) -> Board -> a
 mapPit3 ref1 f board = mapPit ref1 g board
-  where g pit1 = mapPit2 (nextRef ref1) (f pit1) board
+  where g pit1 = mapPit2 (nextRef ref1 board) (f pit1) board
 
 belongsTo :: PitRef -> Player -> Boolean
 belongsTo (Ref { row, idx }) player = row == player
