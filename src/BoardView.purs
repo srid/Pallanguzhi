@@ -6,14 +6,15 @@ import App.Turn as Turn
 import Data.Array as Array
 import Pux.CSS as C
 import Pux.Html as H
-import App.Board (Pit, PitRef, Player, Board, getStore)
+import App.Board (Pit, PitRef, Player, Board, getStore, isBlocked)
 import App.FixedMatrix72 (Row(B, A))
 import App.Hand (Hand)
 import App.Turn (Turn)
+import CSS (gray)
 import Data.Traversable (sequence)
 import Prelude (bind, const, pure, show, ($), (<), (<$>), (<<<), (<>), (==), (#))
-import Pux.CSS (Color, Display, em, pct, hsl, px, style)
-import Pux.Html (Attribute, Html, div, text)
+import Pux.CSS (Color, em, pct, hsl, px, style)
+import Pux.Html (Html, div, text)
 import Pux.Html.Events (onClick)
 
 class BoardView state action | state -> action where
@@ -87,7 +88,9 @@ viewPit :: forall action state. BoardView state action
 viewPit state ref count =
   H.div (getJusts [css, event]) [body]
   where
-    body = div [style do apply4 C.margin (em 1.0) ] [text $ showPadded count]
+    body = div [style do apply4 C.margin (em 1.0) ] [text content ]
+    blocked = isBlocked ref (getBoard state)
+    content = if blocked then "X" else showPadded count
     event = onClick <$> const <$> getPitAction state ref
     color = pitColor $ pitState state ref
     css = Just $ style do
@@ -96,7 +99,7 @@ viewPit state ref count =
       C.height (em 3.0)
       C.textAlign C.center
       C.fontSize (em 2.5)
-      C.backgroundColor color
+      C.backgroundColor $ if blocked then gray else color
       C.padding (em 0.0) (em padding) (em 0.0) (em padding)
       apply4 C.margin (em 0.0)
       C.border C.solid (px 1.0) C.black

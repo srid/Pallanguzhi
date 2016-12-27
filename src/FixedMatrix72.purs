@@ -34,27 +34,23 @@ instance showRef :: Show Ref where
     "Ref row=" <> show row <> " idx=" <> show idx
 
 init :: forall a. a -> FixedMatrix72 a
-init e =
-  FixedMatrix72 $ Matrix.repeat 7 2 e
+init e = FixedMatrix72 $ Matrix.repeat 7 2 e
 
 makeRef :: Row -> Int -> Ref
 makeRef row idx = Ref { row, idx }
 
 getRow :: forall a. Row -> FixedMatrix72 a -> Array a
-getRow row (FixedMatrix72 m) =
-  unsafePartial fromJust v
+getRow row (FixedMatrix72 m) = unsafePartial fromJust v
   where v = Matrix.getRow (rowToInt row) m
 
 lookup :: forall a. Ref -> FixedMatrix72 a -> a
-lookup (Ref ref) (FixedMatrix72 m) =
-  unsafePartial fromJust v
+lookup (Ref ref) (FixedMatrix72 m) = unsafePartial fromJust v
   where v = Matrix.get col row m
         row = rowToInt ref.row
         col = ref.idx
 
 modify :: forall a. Ref -> (a -> a) -> FixedMatrix72 a -> FixedMatrix72 a
-modify (Ref ref) f (FixedMatrix72 m) =
-  FixedMatrix72 $ unsafePartial fromJust v
+modify (Ref ref) f (FixedMatrix72 m) = FixedMatrix72 $ unsafePartial fromJust v
   where v = Matrix.modify ref.idx (rowToInt ref.row) f m
 
 mapRowWithIndex :: forall a b. Row -> (Ref -> a -> b) -> FixedMatrix72 a -> Array b

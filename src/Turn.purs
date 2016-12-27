@@ -59,23 +59,20 @@ applyTurns turns s = foldl (flip runTurn) s turns
 
 advance :: State -> State
 advance (Tuple hand board) = Tuple hand' board
-  where hand' = hand { pitRef = Board.nextRef hand.pitRef }
+  where hand' = hand { pitRef = Board.nextRef hand.pitRef board }
 
 capture :: State -> State
 capture (Tuple hand board) = Tuple hand board'
-  where board' = board
-                 # Board.clear hand.pitRef
-                 # Board.store hand.player newSeeds
-        newSeeds = Board.lookup hand.pitRef board
+  where board' = Board.storeFromPit hand.player board hand.pitRef
 
 lift :: State -> State
 lift (Tuple hand board) = Tuple hand' board'
-  where board' = board # Board.clear hand.pitRef
+  where board' = board # Board.clearPit hand.pitRef
         hand' = hand { seeds = Board.lookup hand.pitRef board }
 
 sow :: State -> State
 sow (Tuple hand board) = Tuple hand' board'
-  where board' = board # Board.modify hand.pitRef ((+) 1)
+  where board' = board # Board.modifyPit hand.pitRef ((+) 1)
         hand' = hand { seeds = hand.seeds - 1 }
 
 -- Internal
