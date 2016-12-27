@@ -5,7 +5,7 @@ import App.FixedMatrix72 (Ref(Ref), Row(..))
 import Data.Array ((..), (:))
 import Data.Foldable
 import Data.Maybe (Maybe(..))
-import Prelude (bind, const, flip, pure, (#), ($), (*), (+), (-), (<), (<#>), (<$>), (==), (>=))
+import Prelude (bind, const, pure, (#), ($), (*), (+), (-), (<), (<#>), (<$>), (==), (>=))
 import Control.MonadZero (guard)
 
 type Board =
@@ -46,7 +46,8 @@ initWith' a b perPit =
   # store B b
   # refillPlayer A
   # refillPlayer B
-    where refillPlayer player = flip (foldl $ refillPit player) (refs player)
+    where refillPlayer player board =
+            foldl (refillPit player) board (refs player)
           refillPit player board ref =
             case unstoreToPit ref player perPit board of
               Just board' -> board'
@@ -115,7 +116,7 @@ storeFromPit player board ref =
   # store player seeds
     where seeds = lookup ref board
 
-store :: Player -> Pit -> Board -> Board
+store :: Player -> Int -> Board -> Board
 store A seeds board = board { storeA = board.storeA + seeds }
 store B seeds board = board { storeB = board.storeB + seeds }
 
@@ -125,7 +126,7 @@ unstore A count board = do
   pure $ board { storeA = board.storeA - count }
 unstore B count board = do
   guard $ board.storeB >= count
-  pure $ board { storeA = board.storeB - count }
+  pure $ board { storeB = board.storeB - count }
 
 getStore :: Player -> Board -> Pit
 getStore A board = board.storeA
