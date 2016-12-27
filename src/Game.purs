@@ -5,19 +5,16 @@ import App.Board as Board
 import App.BoardView as BoardView
 import App.Config as Config
 import App.Round as Round
-import Pux.CSS as C
 import Pux.Html as H
 import App.Board (Board, Player)
 import App.BoardView (class BoardView, getBoard, getCurrentPlayer, getHand, getPitAction, getTurn)
 import App.Config (Config)
 import App.FixedMatrix72 (Row(..))
-import CSS (blue)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Tuple (Tuple(..))
 import Prelude (const, show, (#), ($), (+), (<$>), (<>))
 import Pux (EffModel, mapEffects, mapState, noEffects)
-import Pux.CSS (style)
 import Pux.Html (Html)
 import Pux.Html.Events (onClick)
 
@@ -63,14 +60,14 @@ update (RoundAction action) (PlayingRound config nth round) =
       # noEffects
 
 update NextRound (RoundOver config nth player board) =
-  PlayingRound config (nth + 1) (Round.init player board')
+  PlayingRound config (nth + 1) (Round.init player newBoard)
   # noEffects
-    where board' = board
-                   # captureAll A
-                   # captureAll B
-                   # (\b -> Board.initWith b.storeA b.storeB)
-          captureAll player board =
-            foldl (Board.storeFromPit player) board (Board.refs player)
+    where newBoard = board
+                     # captureAll A
+                     # captureAll B
+                     # (\b -> Board.initWith b.storeA b.storeB)
+          captureAll player' board' =
+            foldl (Board.storeFromPit player') board' (Board.refs player')
 
 update _ state =
   -- TODO: make this not possible
@@ -93,10 +90,8 @@ view state@(RoundOver config nth player board) =
     , Config.view config
     ]
       where viewNextLink =
-              H.div [css, onClick $ const NextRound]
+              H.button [onClick $ const NextRound]
                 [H.text "Play next round"]
-                where css = style do
-                              C.backgroundColor blue
 
 view state@(GameOver config nth player board) =
   H.div []

@@ -55,8 +55,8 @@ initWith a b | a < initPit  = initWith' a b 1
              | true         = initWith' a b 5
 
 refs :: Player -> Array PitRef
-refs A = FM.makeRef A <$> cols..1
-refs B = FM.makeRef B <$> 1..cols
+refs A = FM.makeRef A <$> (cols-1)..0
+refs B = FM.makeRef B <$> 0..(cols-1)
 
 opponentOf :: Player -> Player
 opponentOf A = B
