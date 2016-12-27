@@ -9,10 +9,13 @@ import Pux.Html (Html)
 
 type Config =
   { fastTurn :: Boolean
+  , demo :: Boolean
   }
 
 init :: Config
-init = { fastTurn: true }
+init = { fastTurn: false
+       , demo: false
+       }
 
 turnDelay :: forall state action. BoardView state action
           => Config -> state -> Int

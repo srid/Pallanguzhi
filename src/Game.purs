@@ -46,7 +46,10 @@ instance boardViewGame :: BoardView State Action where
   getPitAction _ _ = Nothing
 
 init :: State
-init = PlayingRound Config.init 1 $ Round.init A Board.init
+init = PlayingRound config 1 round
+  where config = Config.init
+        round = Round.init A board
+        board = if config.demo then Board.initWith 21 49 else Board.init
 
 update :: forall eff. Action -> State -> EffModel State Action (eff)
 update (RoundAction action) (PlayingRound config nth round) =
