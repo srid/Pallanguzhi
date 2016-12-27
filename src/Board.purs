@@ -6,7 +6,7 @@ import App.FixedMatrix72 (Ref(Ref), Row(..))
 import Control.MonadZero (guard)
 import Data.Array ((..), (:))
 import Data.Maybe (Maybe(..))
-import Prelude (bind, const, pure, (#), ($), (*), (+), (-), (<), (<#>), (<$>), (==), (>=))
+import Prelude (bind, const, pure, (#), ($), (*), (+), (-), (<), (<#>), (<$>), (<<<), (==), (>=))
 
 type Board =
   { cells :: FM.FixedMatrix72 Pit
@@ -66,9 +66,12 @@ opponentOf :: Player -> Player
 opponentOf A = B
 opponentOf B = A
 
+isBlocked :: PitRef -> Board -> Boolean
+isBlocked ref = elem ref <<< _.blockedCells
+
 nextRef :: PitRef -> Board -> PitRef
 nextRef ref board =
-  if elem next board.blockedCells
+  if isBlocked next board
     then nextRef next board
     else next
     where next = nextRef' ref
