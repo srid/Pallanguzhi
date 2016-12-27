@@ -58,12 +58,13 @@ instance boardViewRound :: BoardView State Action where
 init :: Player -> Board -> State
 init = Awaiting Nothing
 
-update :: forall eff. Config -> Action -> State -> Either Board (PuxUpdate eff)
+update :: forall eff. Config -> Action -> State -> Either (Tuple Player Board) (PuxUpdate eff)
 update config ContinueTurn (Turning hand board lastTurn nextTurns) =
   case uncons nextTurns of
     Nothing -> -- Turn over
       if allPitsEmptyFor (opponentOf hand.player) board
-        then Left board -- Round over
+        then Tuple hand.player board -- Round over
+             # Left
         else awaitOpponent hand board
              # noEffects
              # Right

@@ -13,6 +13,9 @@ type Config =
   { fastTurn :: Boolean
   }
 
+init :: Config
+init = { fastTurn: true }
+
 turnDelay :: forall state action. BoardView state action
           => Config -> state -> Int
 turnDelay config state =
