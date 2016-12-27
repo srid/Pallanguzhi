@@ -2,10 +2,15 @@ module App.Board where
 
 import App.FixedMatrix72 as FM
 import App.FixedMatrix72 (Ref(Ref), Row(..))
-import Prelude (const, ($), (+), (-), (==))
+import Data.Array ((..), (:))
+import Data.Foldable
+import Data.Maybe (Maybe(..))
+import Prelude (bind, const, flip, pure, (#), ($), (*), (+), (-), (<), (<#>), (<$>), (==), (>=))
+import Control.MonadZero (guard)
 
 type Board =
   { cells :: FM.FixedMatrix72 Pit
+  , blockedCells :: Array PitRef
   , storeA :: Int
   , storeB :: Int
   }
@@ -14,12 +19,44 @@ type Pit = Int
 type PitRef = FM.Ref
 type Player = FM.Row
 
+initPit :: Pit
+initPit = 5
+
+cols :: Int
+cols = 7
+
+rowCount :: Int 
+rowCount = cols * initPit
+
 init :: Board
 init =
-  { cells: FM.init 5
+  { cells: FM.init initPit
+  , blockedCells: []
   , storeA: 0
   , storeB: 0
   }
+
+init'' :: Int -> Int -> Int -> Board
+init'' a b perPit = 
+  init 
+  # store A a
+  # store B b
+  # refillPlayer A 
+  # refillPlayer B 
+    where refillPlayer player = flip (foldl $ refillPit player) (refs player) 
+          refillPit player board ref = 
+            case unstoreToPit ref player perPit board of 
+              Just board' -> board'
+              Nothing -> blockPit ref board
+
+init' :: Int -> Int -> Board
+init' a b | a < initPit  = init'' a b 1
+          | b < initPit  = init'' a b 1
+          | true         = init'' a b 5
+
+refs :: Player -> Array PitRef 
+refs A = FM.makeRef A <$> cols..1
+refs B = FM.makeRef B <$> 1..cols
 
 opponentOf :: Player -> Player
 opponentOf A = B
@@ -30,6 +67,9 @@ nextRef (Ref { row: A, idx: 0 })   = Ref { row: B, idx: 0 }
 nextRef (Ref { row: A, idx: idx }) = Ref { row: A, idx: idx - 1 }
 nextRef (Ref { row: B, idx: 6 })   = Ref { row: A, idx: 6 }
 nextRef (Ref { row: B, idx: idx }) = Ref { row: B, idx: idx + 1 }
+
+blockPit :: PitRef -> Board -> Board 
+blockPit ref board = board { blockedCells = ref : board.blockedCells }
 
 lookup :: PitRef -> Board -> Pit
 lookup ref board = FM.lookup ref board.cells
@@ -48,16 +88,41 @@ mapPit3 ref1 f board = mapPit ref1 g board
 belongsTo :: PitRef -> Player -> Boolean 
 belongsTo (Ref { row, idx }) player = row == player
 
-modify :: PitRef -> (Pit -> Pit) -> Board -> Board
-modify ref f board = board { cells = cells' }
+modifyPit :: PitRef -> (Pit -> Pit) -> Board -> Board
+modifyPit ref f board = board { cells = cells' }
    where cells' = FM.modify ref f board.cells
 
-clear :: PitRef -> Board -> Board
-clear pitRef = modify pitRef (const 0)
+clearPit :: PitRef -> Board -> Board
+clearPit pitRef = modifyPit pitRef (const 0)
+
+setPit :: PitRef -> Int -> Board -> Board 
+setPit ref v = modifyPit ref (const v)
+
+-- Move some seeds from a player's store to this pit
+unstoreToPit :: PitRef -> Player -> Int -> Board -> Maybe Board 
+unstoreToPit ref player count board
+    = unstore player count board
+  <#> setPit ref count
+
+-- Move all seeds from a pit to this player's store
+storeFromPit :: PitRef -> Player -> Board -> Board 
+storeFromPit ref player board = 
+  board 
+  # clearPit ref 
+  # store player seeds  
+    where seeds = lookup ref board
 
 store :: Player -> Pit -> Board -> Board
 store A seeds board = board { storeA = board.storeA + seeds }
 store B seeds board = board { storeB = board.storeB + seeds }
+
+unstore :: Player -> Int -> Board -> Maybe Board
+unstore A count board = do 
+  guard $ board.storeA >= count
+  pure $ board { storeA = board.storeA - count }
+unstore B count board = do 
+  guard $ board.storeB >= count
+  pure $ board { storeA = board.storeB - count }
 
 getStore :: Player -> Board -> Pit 
 getStore A board = board.storeA

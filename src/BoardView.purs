@@ -12,8 +12,8 @@ import App.Hand (Hand)
 import App.Turn (Turn)
 import Data.Traversable (sequence)
 import Prelude (bind, const, pure, show, ($), (<), (<$>), (<<<), (<>), (==), (#))
-import Pux.CSS (Color, Display, em, pct, hsl, px, style)
-import Pux.Html (Attribute, Html, div, text)
+import Pux.CSS (Color, em, pct, hsl, px, style)
+import Pux.Html (Html, div, text)
 import Pux.Html.Events (onClick)
 
 class BoardView state action | state -> action where
