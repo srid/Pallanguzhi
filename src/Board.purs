@@ -25,7 +25,7 @@ initPit = 5
 cols :: Int
 cols = 7
 
-rowCount :: Int 
+rowCount :: Int
 rowCount = cols * initPit
 
 init :: Board
@@ -36,25 +36,25 @@ init =
   , storeB: 0
   }
 
-init'' :: Int -> Int -> Int -> Board
-init'' a b perPit = 
-  init 
+initWith' :: Int -> Int -> Int -> Board
+initWith' a b perPit =
+  init
   # store A a
   # store B b
-  # refillPlayer A 
-  # refillPlayer B 
-    where refillPlayer player = flip (foldl $ refillPit player) (refs player) 
-          refillPit player board ref = 
-            case unstoreToPit ref player perPit board of 
+  # refillPlayer A
+  # refillPlayer B
+    where refillPlayer player = flip (foldl $ refillPit player) (refs player)
+          refillPit player board ref =
+            case unstoreToPit ref player perPit board of
               Just board' -> board'
               Nothing -> blockPit ref board
 
-init' :: Int -> Int -> Board
-init' a b | a < initPit  = init'' a b 1
-          | b < initPit  = init'' a b 1
-          | true         = init'' a b 5
+initWith :: Int -> Int -> Board
+initWith a b | a < initPit  = initWith' a b 1
+             | b < initPit  = initWith' a b 1
+             | true         = initWith' a b 5
 
-refs :: Player -> Array PitRef 
+refs :: Player -> Array PitRef
 refs A = FM.makeRef A <$> cols..1
 refs B = FM.makeRef B <$> 1..cols
 
@@ -68,7 +68,7 @@ nextRef (Ref { row: A, idx: idx }) = Ref { row: A, idx: idx - 1 }
 nextRef (Ref { row: B, idx: 6 })   = Ref { row: A, idx: 6 }
 nextRef (Ref { row: B, idx: idx }) = Ref { row: B, idx: idx + 1 }
 
-blockPit :: PitRef -> Board -> Board 
+blockPit :: PitRef -> Board -> Board
 blockPit ref board = board { blockedCells = ref : board.blockedCells }
 
 lookup :: PitRef -> Board -> Pit
@@ -85,7 +85,7 @@ mapPit3 :: forall a. PitRef -> (Pit -> Pit -> Pit -> a) -> Board -> a
 mapPit3 ref1 f board = mapPit ref1 g board
   where g pit1 = mapPit2 (nextRef ref1) (f pit1) board
 
-belongsTo :: PitRef -> Player -> Boolean 
+belongsTo :: PitRef -> Player -> Boolean
 belongsTo (Ref { row, idx }) player = row == player
 
 modifyPit :: PitRef -> (Pit -> Pit) -> Board -> Board
@@ -95,21 +95,21 @@ modifyPit ref f board = board { cells = cells' }
 clearPit :: PitRef -> Board -> Board
 clearPit pitRef = modifyPit pitRef (const 0)
 
-setPit :: PitRef -> Int -> Board -> Board 
+setPit :: PitRef -> Int -> Board -> Board
 setPit ref v = modifyPit ref (const v)
 
 -- Move some seeds from a player's store to this pit
-unstoreToPit :: PitRef -> Player -> Int -> Board -> Maybe Board 
+unstoreToPit :: PitRef -> Player -> Int -> Board -> Maybe Board
 unstoreToPit ref player count board
     = unstore player count board
   <#> setPit ref count
 
 -- Move all seeds from a pit to this player's store
-storeFromPit :: PitRef -> Player -> Board -> Board 
-storeFromPit ref player board = 
-  board 
-  # clearPit ref 
-  # store player seeds  
+storeFromPit :: Player -> Board -> PitRef -> Board
+storeFromPit player board ref =
+  board
+  # clearPit ref
+  # store player seeds
     where seeds = lookup ref board
 
 store :: Player -> Pit -> Board -> Board
@@ -117,13 +117,13 @@ store A seeds board = board { storeA = board.storeA + seeds }
 store B seeds board = board { storeB = board.storeB + seeds }
 
 unstore :: Player -> Int -> Board -> Maybe Board
-unstore A count board = do 
+unstore A count board = do
   guard $ board.storeA >= count
   pure $ board { storeA = board.storeA - count }
-unstore B count board = do 
+unstore B count board = do
   guard $ board.storeB >= count
   pure $ board { storeA = board.storeB - count }
 
-getStore :: Player -> Board -> Pit 
+getStore :: Player -> Board -> Pit
 getStore A board = board.storeA
 getStore B board = board.storeB

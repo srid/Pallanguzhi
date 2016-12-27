@@ -63,7 +63,7 @@ advance (Tuple hand board) = Tuple hand' board
 
 capture :: State -> State
 capture (Tuple hand board) = Tuple hand board'
-  where board' = Board.storeFromPit hand.pitRef hand.player board
+  where board' = Board.storeFromPit hand.player board hand.pitRef 
 
 lift :: State -> State
 lift (Tuple hand board) = Tuple hand' board'
