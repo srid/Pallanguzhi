@@ -113,11 +113,8 @@ showPadded n =
       where extra = "  "
 
 viewPlayer :: Player -> String
-viewPlayer player = viewPlayerEmoji player
-
-viewPlayerEmoji :: Player -> String
-viewPlayerEmoji A = "🐄"
-viewPlayerEmoji B = "🐓"
+viewPlayer A = "A"
+viewPlayer B = "B"
 
 getJusts :: forall a. Array (Maybe a) -> Array a
 getJusts = fromMaybe [] <<< sequence <<< Array.filter isJust
