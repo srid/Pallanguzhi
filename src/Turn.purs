@@ -8,7 +8,7 @@ import App.Hand (Hand)
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
 import Data.Unfoldable (class Unfoldable, unfoldr)
-import Prelude (class Show, show, flip, map, (#), ($), (+), (-), (<<<), (<>))
+import Prelude (class Eq, class Show, eq, flip, map, show, (#), ($), (+), (-), (<<<), (<>), (==))
 
 data Turn = Advance | Capture Player | Lift | Sow
 
@@ -19,6 +19,13 @@ instance showTurn :: Show Turn where
   show (Capture player) = "Capture:" <> show player
   show Lift = "Lift"
   show Sow = "Sow"
+
+instance eqTurn :: Eq Turn where
+  eq Advance Advance = true
+  eq (Capture p1) (Capture p2) = p1 == p2
+  eq Lift Lift = true
+  eq Sow Sow = true
+  eq _ _ = false
 
 runTurn :: Turn -> State -> State
 runTurn Advance = advance

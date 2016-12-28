@@ -11,6 +11,7 @@ import App.FixedMatrix72 (Row(B, A))
 import App.Hand (Hand)
 import App.Turn (Turn)
 import CSS (gray)
+import Control.MonadZero (guard)
 import Data.Traversable (sequence)
 import Data.Unfoldable (replicate)
 import Prelude (bind, const, mod, pure, show, (#), ($), (-), (/), (<), (<$>), (<<<), (<=), (<>), (==))
@@ -25,13 +26,20 @@ class BoardView state action | state -> action where
   getCurrentPlayer :: state -> Maybe Player
   getPitAction :: state -> PitRef -> Maybe action
 
+type PitState = Maybe Turn
+
 isPlaying :: forall state action. BoardView state action
           => state -> Player -> Boolean
 isPlaying state player = fromMaybe false $ do
   currentPlayer <- getCurrentPlayer state
   pure $ player == currentPlayer
 
-type PitState = Maybe Turn
+isCapturing :: forall state action. BoardView state action
+            => state -> Player -> Boolean
+isCapturing state player = fromMaybe false $ do
+  guard $ isPlaying state player
+  guard $ getTurn state == Just (Turn.Capture player)
+  pure true
 
 pitState :: forall state action. BoardView state action
          => state -> PitRef -> PitState
@@ -45,18 +53,20 @@ playerColor :: Player -> Color
 playerColor A = C.blue # C.lighten 0.2
 playerColor B = C.red # C.lighten 0.2
 
+playerColorFocus :: Player -> Color
+playerColorFocus player = playerColor player # C.saturate 0.9
+
 dynamicPlayerColor :: forall state action. BoardView state action
                    => state -> Player -> Color
-dynamicPlayerColor state player =
-  if isPlaying state player
-    then playerColor player
-    else playerColor player
+dynamicPlayerColor state player = go (isPlaying state player) (isCapturing state player)
+  where go _ true = playerColorFocus player
+        go _ _ = playerColor player
 
 pitColor :: PitState -> Color
-pitColor (Just (Turn.Capture player)) = playerColor player
-pitColor (Just Turn.Lift) = hsl 150.0 1.0 0.3
-pitColor (Just Turn.Sow) = C.lighten 0.4 $ pitColor Nothing
-pitColor _ = hsl 70.0 1.0 0.3
+pitColor (Just (Turn.Capture player)) = playerColorFocus player
+pitColor (Just Turn.Lift) = pitColor Nothing # C.lighten 0.2
+pitColor (Just Turn.Sow) = pitColor Nothing # C.lighten 0.4
+pitColor _ = C.green
 
 view :: forall action state. BoardView state action
      => state -> Html action
