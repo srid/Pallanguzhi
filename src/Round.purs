@@ -14,6 +14,7 @@ import App.BoardView (class BoardView)
 import App.FixedMatrix72 as FM
 import App.Hand (Hand)
 import App.Turn (Turn)
+import App.AI as AI
 import Control.Monad.Aff (later')
 import Data.Either (Either(..))
 import Data.List (List, length, uncons)
@@ -132,10 +133,16 @@ view state =
     [ heading state
     , BoardView.view state
     , errorDiv state
+    , aiSuggestView state
     ]
     where errorDiv (Awaiting (Just error) _ _) =
             div [] [ text $ "ERROR: " <> error ]
           errorDiv _ =
+            div [] []
+          aiSuggestView (Awaiting _ player board) =
+            div [] [ text $ "Suggested move: " <> show ref ]
+              where ref = AI.suggest player board
+          aiSuggestView _ =
             div [] []
           heading (Turning hand board _ turns) =
             div [] [ text $ BoardView.viewPlayer hand.player
