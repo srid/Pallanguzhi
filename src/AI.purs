@@ -6,11 +6,11 @@ import App.Turn as Turn
 import Data.Tuple as Tuple
 import App.Board (Board, Player, PitRef)
 import App.FixedMatrix72 (Ref(..), Row(..))
-import Data.Array (zipWith)
+import Data.Array (filter, zipWith)
 import Data.Foldable (maximum)
 import Data.Maybe (Maybe)
 import Data.Tuple (Tuple(..))
-import Prelude (class Eq, class Ord, class Show, compare, eq, show, ($), (&&), (<$>), (<<<), (<>))
+import Prelude (class Eq, class Ord, class Show, compare, eq, not, show, ($), (&&), (<$>), (<<<), (<>), (==), (>))
 
 newtype Selection = Selection (Tuple PitRef Int)
 
@@ -32,7 +32,8 @@ suggest :: Player -> Board -> Maybe Selection
 suggest player board = bestRef
   where bestRef = maximum $ zipWith selection refs (Board.getStore player <$> moves)
         moves = simulateMove player board <$> refs
-        refs = Board.refs player
+        refs = filter validPit $ Board.refs player
+        validPit r = Board.hasSeeds r board && not Board.isBlocked r board
 
 
 simulateMove :: Player -> Board -> PitRef -> Board

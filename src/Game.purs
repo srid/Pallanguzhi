@@ -51,7 +51,7 @@ init = PlayingRound config 1 round
   where config = Config.init
         round = Round.init A board
         board = if config.demo
-                  then Board.initWith 2 68 -- 21 49
+                  then Board.initWith 21 49
                   else Board.init
 
 update :: forall eff. Action -> State -> EffModel State Action (eff)
