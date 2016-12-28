@@ -11,10 +11,12 @@ import App.FixedMatrix72 (Row(B, A))
 import App.Hand (Hand)
 import App.Turn (Turn)
 import CSS (gray)
+import Control.MonadZero (guard)
 import Data.Traversable (sequence)
-import Prelude (bind, const, pure, show, ($), (<), (<$>), (<<<), (<>), (==), (#))
+import Data.Unfoldable (replicate)
+import Prelude (bind, const, mod, pure, show, (#), ($), (-), (/), (<), (<$>), (<<<), (<=), (<>), (==))
 import Pux.CSS (Color, em, pct, hsl, px, style)
-import Pux.Html (Html, div, text)
+import Pux.Html (Attribute, Html, div, text)
 import Pux.Html.Events (onClick)
 
 class BoardView state action | state -> action where
@@ -24,12 +26,20 @@ class BoardView state action | state -> action where
   getCurrentPlayer :: state -> Maybe Player
   getPitAction :: state -> PitRef -> Maybe action
 
-isPlaying :: forall state action. BoardView state action => state -> Player -> Boolean
+type PitState = Maybe Turn
+
+isPlaying :: forall state action. BoardView state action
+          => state -> Player -> Boolean
 isPlaying state player = fromMaybe false $ do
   currentPlayer <- getCurrentPlayer state
   pure $ player == currentPlayer
 
-type PitState = Maybe Turn
+isCapturing :: forall state action. BoardView state action
+            => state -> Player -> Boolean
+isCapturing state player = fromMaybe false $ do
+  guard $ isPlaying state player
+  guard $ getTurn state == Just (Turn.Capture player)
+  pure true
 
 pitState :: forall state action. BoardView state action
          => state -> PitRef -> PitState
@@ -39,11 +49,24 @@ pitState state ref = do
     then getTurn state
     else Nothing
 
+playerColor :: Player -> Color
+playerColor A = C.blue # C.lighten 0.2
+playerColor B = C.red # C.lighten 0.2
+
+playerColorFocus :: Player -> Color
+playerColorFocus player = playerColor player # C.saturate 0.9
+
+dynamicPlayerColor :: forall state action. BoardView state action
+                   => state -> Player -> Color
+dynamicPlayerColor state player = go (isPlaying state player) (isCapturing state player)
+  where go _ true = playerColorFocus player
+        go _ _ = playerColor player
+
 pitColor :: PitState -> Color
-pitColor (Just (Turn.Capture _)) = hsl 300.0 1.0 0.3
-pitColor (Just Turn.Lift) = hsl 150.0 1.0 0.3
-pitColor (Just Turn.Sow) = C.lighten 0.4 $ pitColor Nothing
-pitColor _ = hsl 70.0 1.0 0.3
+pitColor (Just (Turn.Capture player)) = playerColorFocus player
+pitColor (Just Turn.Lift) = pitColor Nothing # C.lighten 0.2
+pitColor (Just Turn.Sow) = pitColor Nothing # C.lighten 0.4
+pitColor _ = C.green
 
 view :: forall action state. BoardView state action
      => state -> Html action
@@ -63,24 +86,23 @@ view state =
 viewStore :: forall action state. BoardView state action
           => state -> Row -> Html action
 viewStore state player =
-  H.pre [css] [ text s ]
-    where s = viewPlayer player <> showPadded seeds
+  H.pre [css] [ text s, viewSeeds 20 seeds ]
+    where s = viewPlayer player
           seeds = getStore player board
           board = getBoard state
-          color = if isPlaying state player
-                    then pitColor (Just Turn.Sow)
-                    else pitColor Nothing # C.darken 0.1
+          color = dynamicPlayerColor state player
           css = style do
             C.display C.inlineFlex
             C.textAlign C.center
-            C.fontSize (em 2.5)
+            C.fontSize (em 3.8)
             C.backgroundColor color
-            C.width (pct 20.0)
+            C.width (pct 40.0)
             C.height (em 2.0)
-            C.marginLeft (pct 35.0)
-            C.border C.solid (px 1.0) C.black
+            C.marginLeft (pct 25.0)
             C.padding (em 0.0) (em padding) (em 0.0) (em padding)
+            C.border C.solid (px border) C.black
               where padding = 0.5
+                    border = if isPlaying state player then 9.5 else 0.0
 
 
 viewPit :: forall action state. BoardView state action
@@ -88,22 +110,42 @@ viewPit :: forall action state. BoardView state action
 viewPit state ref count =
   H.div (getJusts [css, event]) [body]
   where
-    body = div [style do apply4 C.margin (em 1.0) ] [text content ]
+    body = div [] [content ]
     blocked = isBlocked ref (getBoard state)
-    content = if blocked then "X" else showPadded count
+    content = if blocked then viewDisabledPit else viewSeeds 5 count
     event = onClick <$> const <$> getPitAction state ref
     color = pitColor $ pitState state ref
     css = Just $ style do
       C.display C.inlineFlex
       C.width (pct 10.0)
       C.height (em 3.0)
-      C.textAlign C.center
       C.fontSize (em 2.5)
       C.backgroundColor $ if blocked then gray else color
-      C.padding (em 0.0) (em padding) (em 0.0) (em padding)
       apply4 C.margin (em 0.0)
       C.border C.solid (px 1.0) C.black
+      C.padding (em 0.0) (em padding) (em 0.0) (em padding)
         where padding = 0.5
+
+viewDisabledPit :: forall action. Html action
+viewDisabledPit = H.div [compactStyle] [ H. text $ "x" ]
+
+viewSeed :: forall action. Html action
+viewSeed = H.span [compactStyle] [ H.text $ "⦿"]
+
+-- Display seeds as a matrix confined to a pit cell
+viewSeeds :: forall action. Int -> Int -> Html action
+viewSeeds g c | c == 0 = H.div [compactStyle] [ text "-"]
+              | c <= g = H.div [compactStyle] $ replicate c viewSeed
+              | true   = H.div [compactStyle] $ (viewSeeds g <$> splits)
+                          where splits = replicate (c/g) g <> [c `mod` g]
+
+compactStyle :: forall action. Attribute action
+compactStyle = style do
+  apply4 C.padding (px 0.0)
+  apply4 C.margin (px 0.0)
+  C.fontSize (px 24.0)
+  C.width (em 1.0)
+  C.height (em 1.0)
 
 showPadded :: Int -> String
 showPadded n =
@@ -113,11 +155,8 @@ showPadded n =
       where extra = "  "
 
 viewPlayer :: Player -> String
-viewPlayer player = viewPlayerEmoji player
-
-viewPlayerEmoji :: Player -> String
-viewPlayerEmoji A = "🐄"
-viewPlayerEmoji B = "🐓"
+viewPlayer A = "A"
+viewPlayer B = "B"
 
 getJusts :: forall a. Array (Maybe a) -> Array a
 getJusts = fromMaybe [] <<< sequence <<< Array.filter isJust
