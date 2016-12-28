@@ -31,7 +31,10 @@ turnDelay config state =
 view :: forall action. Config -> Html action
 view config =
   H.div []
-    [ H.text $ "Fast turn = " <> show config.fastTurn ]
+    [ H.text $ "[Game Config] fastTurn="
+            <> show config.fastTurn
+            <> "; demo="
+            <> show config.demo ]
     -- TODO: UI for config toggling
     -- [ H.text $ "Enable fast turn:"
     -- , H.option [A.checked config.fastTurn] []

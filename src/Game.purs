@@ -16,6 +16,7 @@ import Data.Tuple (Tuple(..))
 import Prelude (const, show, (#), ($), (+), (<$>), (<>))
 import Pux (EffModel, mapEffects, mapState, noEffects)
 import Pux.Html (Html)
+import Pux.CSS as C
 import Pux.Html.Events (onClick)
 
 data State
@@ -49,7 +50,9 @@ init :: State
 init = PlayingRound config 1 round
   where config = Config.init
         round = Round.init A board
-        board = if config.demo then Board.initWith 21 49 else Board.init
+        board = if config.demo
+                  then Board.initWith 2 68 -- 21 49
+                  else Board.init
 
 update :: forall eff. Action -> State -> EffModel State Action (eff)
 update (RoundAction action) (PlayingRound config nth round) =
@@ -80,25 +83,30 @@ update _ state =
 view :: State -> Html Action
 view (PlayingRound config nth round) =
   H.div []
-    [ H.h2 [] [ H.text $ "Playing round " <> show nth ]
+    [ H.h2 [] [ H.text $ "Pallanguzhi round #" <> show nth ]
     , RoundAction <$> Round.view round
     , Config.view config
     ]
 
 view state@(RoundOver config nth player board) =
   H.div []
-    [ H.h2 [] [ H.text $ "Round " <> show nth <> " is over" ]
-    , BoardView.view state
+    [ H.h2 [] [ H.text $ "Pallanguzhi round #" <> show nth <> " is over!" ]
     , viewNextLink
+    , BoardView.view state
     , Config.view config
     ]
       where viewNextLink =
-              H.button [onClick $ const NextRound]
+              H.button [onClick $ const NextRound, css]
                 [H.text "Play next round"]
+            css = C.style do
+                    C.fontSize (C.em 3.0)
 
 view state@(GameOver config nth player board) =
   H.div []
-    [ H.h2 [] [ H.text $ show player <> "won the game after " <> show nth <> "rounds" ]
+    [ H.h2 [] [ H.text $ "Pallanguzhi: "
+                      <> show player
+                      <> "won the game after "
+                      <> show nth <> "rounds" ]
     , BoardView.view state
     , Config.view config
     ]

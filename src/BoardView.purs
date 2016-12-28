@@ -94,7 +94,7 @@ viewStore state player =
           css = style do
             C.display C.inlineFlex
             C.textAlign C.center
-            C.fontSize (em 2.8)
+            C.fontSize (em 3.8)
             C.backgroundColor color
             C.width (pct 40.0)
             C.height (em 2.0)
@@ -127,7 +127,7 @@ viewPit state ref count =
         where padding = 0.5
 
 viewDisabledPit :: forall action. Html action
-viewDisabledPit = H.div [compactStyle] [ H. text $ "X" ]
+viewDisabledPit = H.div [compactStyle] [ H. text $ "x" ]
 
 viewSeed :: forall action. Html action
 viewSeed = H.span [compactStyle] [ H.text $ "⦿"]

@@ -14,29 +14,28 @@ data Action
 
 type State =
   { route :: Route
-  , game :: Game.State 
+  , game :: Game.State
   }
 
 init :: State
 init =
   { route: NotFound
-  , game: Game.init 
+  , game: Game.init
   }
 
 update :: Action -> State -> EffModel State Action (dom :: DOM)
 update (PageView route) state =
   noEffects $ state { route = route }
 update (GameAction action) state =
-  Game.update action state.game 
-  # mapEffects GameAction 
+  Game.update action state.game
+  # mapEffects GameAction
   # mapState state { game = _ }
 
 view :: State -> Html Action
 view state =
   div
     []
-    [ h1 [] [ text  "Pallanguzhi" ]
-    , case state.route of
+    [ case state.route of
         Home ->
           GameAction <$> Game.view state.game
         NotFound ->
