@@ -12,9 +12,10 @@ import App.Hand (Hand)
 import App.Turn (Turn)
 import CSS (gray)
 import Data.Traversable (sequence)
-import Prelude (bind, const, pure, show, ($), (<), (<$>), (<<<), (<>), (==), (#))
+import Data.Unfoldable (replicate)
+import Prelude (bind, const, mod, pure, show, (#), ($), (-), (/), (<), (<$>), (<<<), (<=), (<>), (==))
 import Pux.CSS (Color, em, pct, hsl, px, style)
-import Pux.Html (Html, div, text)
+import Pux.Html (Attribute, Html, div, text)
 import Pux.Html.Events (onClick)
 
 class BoardView state action | state -> action where
@@ -63,7 +64,7 @@ view state =
 viewStore :: forall action state. BoardView state action
           => state -> Row -> Html action
 viewStore state player =
-  H.pre [css] [ text s ]
+  H.pre [css] [ text s, viewSeeds seeds ]
     where s = viewPlayer player <> showPadded seeds
           seeds = getStore player board
           board = getBoard state
@@ -88,22 +89,39 @@ viewPit :: forall action state. BoardView state action
 viewPit state ref count =
   H.div (getJusts [css, event]) [body]
   where
-    body = div [style do apply4 C.margin (em 1.0) ] [text content ]
+    body = div [] [content ]
     blocked = isBlocked ref (getBoard state)
-    content = if blocked then "X" else showPadded count
+    content = if blocked then text "X" else viewSeeds count
     event = onClick <$> const <$> getPitAction state ref
     color = pitColor $ pitState state ref
     css = Just $ style do
       C.display C.inlineFlex
       C.width (pct 10.0)
       C.height (em 3.0)
-      C.textAlign C.center
+      -- C.textAlign C.center
       C.fontSize (em 2.5)
       C.backgroundColor $ if blocked then gray else color
-      C.padding (em 0.0) (em padding) (em 0.0) (em padding)
       apply4 C.margin (em 0.0)
       C.border C.solid (px 1.0) C.black
+      C.padding (em 0.0) (em padding) (em 0.0) (em padding)
         where padding = 0.5
+
+viewSeed :: forall action. Html action
+viewSeed = H.span [compactStyle] [ H.text $ "⦿"]
+
+viewSeeds :: forall action. Int -> Html action
+viewSeeds c | c == 0 = H.div [compactStyle] [ text "-"]
+            | c <= 5 = H.div [compactStyle] $ replicate c viewSeed
+            | true   = H.div [compactStyle] $ (viewSeeds <$> splits)
+                          where splits = replicate (c/5) 5 <> [c `mod` 5]
+
+compactStyle :: forall action. Attribute action
+compactStyle = style do
+  apply4 C.padding (px 0.0)
+  apply4 C.margin (px 0.0)
+  C.fontSize (px 24.0)
+  C.width (em 1.0)
+  C.height (em 1.0)
 
 showPadded :: Int -> String
 showPadded n =
