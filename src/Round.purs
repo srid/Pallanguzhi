@@ -140,8 +140,8 @@ view state =
           errorDiv _ =
             div [] []
           aiSuggestView (Awaiting _ player board) =
-            div [] [ text $ "Suggested move: " <> show ref ]
-              where ref = AI.suggest player board
+            div [] [ text $ "Suggested move: " <> show tuple ]
+              where tuple = AI.suggest player board
           aiSuggestView _ =
             div [] []
           heading (Turning hand board _ turns) =

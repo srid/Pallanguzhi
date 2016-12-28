@@ -15,7 +15,7 @@ type Config =
 
 init :: Config
 init = { fastTurn: false
-       , demo: true
+       , demo: false
        , aiSuggest: true
        }
 
