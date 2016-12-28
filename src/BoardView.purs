@@ -87,20 +87,20 @@ viewStore :: forall action state. BoardView state action
           => state -> Row -> Html action
 viewStore state player =
   H.pre [css] [ text s, viewSeeds 20 seeds ]
-    where s = viewPlayer player <> showPadded seeds
+    where s = viewPlayer player
           seeds = getStore player board
           board = getBoard state
           color = dynamicPlayerColor state player
           css = style do
             C.display C.inlineFlex
             C.textAlign C.center
-            C.fontSize (em 0.8)
+            C.fontSize (em 2.8)
             C.backgroundColor color
             C.width (pct 40.0)
-            C.height (em 6.0)
+            C.height (em 2.0)
             C.marginLeft (pct 25.0)
             C.padding (em 0.0) (em padding) (em 0.0) (em padding)
-            C.border C.dotted (px border) C.black
+            C.border C.solid (px border) C.black
               where padding = 0.5
                     border = if isPlaying state player then 9.5 else 0.0
 
@@ -112,7 +112,7 @@ viewPit state ref count =
   where
     body = div [] [content ]
     blocked = isBlocked ref (getBoard state)
-    content = if blocked then text "X" else viewSeeds 5 count
+    content = if blocked then viewDisabledPit else viewSeeds 5 count
     event = onClick <$> const <$> getPitAction state ref
     color = pitColor $ pitState state ref
     css = Just $ style do
@@ -125,6 +125,9 @@ viewPit state ref count =
       C.border C.solid (px 1.0) C.black
       C.padding (em 0.0) (em padding) (em 0.0) (em padding)
         where padding = 0.5
+
+viewDisabledPit :: forall action. Html action
+viewDisabledPit = H.div [compactStyle] [ H. text $ "X" ]
 
 viewSeed :: forall action. Html action
 viewSeed = H.span [compactStyle] [ H.text $ "⦿"]
