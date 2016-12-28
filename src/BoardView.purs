@@ -64,7 +64,7 @@ view state =
 viewStore :: forall action state. BoardView state action
           => state -> Row -> Html action
 viewStore state player =
-  H.pre [css] [ text s, viewSeeds seeds ]
+  H.pre [css] [ text s, viewSeeds 20 seeds ]
     where s = viewPlayer player <> showPadded seeds
           seeds = getStore player board
           board = getBoard state
@@ -74,11 +74,11 @@ viewStore state player =
           css = style do
             C.display C.inlineFlex
             C.textAlign C.center
-            C.fontSize (em 2.5)
+            C.fontSize (em 0.8)
             C.backgroundColor color
-            C.width (pct 20.0)
-            C.height (em 2.0)
-            C.marginLeft (pct 35.0)
+            C.width (pct 40.0)
+            C.height (em 6.0)
+            C.marginLeft (pct 15.0)
             C.border C.solid (px 1.0) C.black
             C.padding (em 0.0) (em padding) (em 0.0) (em padding)
               where padding = 0.5
@@ -91,14 +91,13 @@ viewPit state ref count =
   where
     body = div [] [content ]
     blocked = isBlocked ref (getBoard state)
-    content = if blocked then text "X" else viewSeeds count
+    content = if blocked then text "X" else viewSeeds 5 count
     event = onClick <$> const <$> getPitAction state ref
     color = pitColor $ pitState state ref
     css = Just $ style do
       C.display C.inlineFlex
       C.width (pct 10.0)
       C.height (em 3.0)
-      -- C.textAlign C.center
       C.fontSize (em 2.5)
       C.backgroundColor $ if blocked then gray else color
       apply4 C.margin (em 0.0)
@@ -109,11 +108,12 @@ viewPit state ref count =
 viewSeed :: forall action. Html action
 viewSeed = H.span [compactStyle] [ H.text $ "⦿"]
 
-viewSeeds :: forall action. Int -> Html action
-viewSeeds c | c == 0 = H.div [compactStyle] [ text "-"]
-            | c <= 5 = H.div [compactStyle] $ replicate c viewSeed
-            | true   = H.div [compactStyle] $ (viewSeeds <$> splits)
-                          where splits = replicate (c/5) 5 <> [c `mod` 5]
+-- Display seeds as a matrix confined to a pit cell
+viewSeeds :: forall action. Int -> Int -> Html action
+viewSeeds g c | c == 0 = H.div [compactStyle] [ text "-"]
+              | c <= g = H.div [compactStyle] $ replicate c viewSeed
+              | true   = H.div [compactStyle] $ (viewSeeds g <$> splits)
+                          where splits = replicate (c/g) g <> [c `mod` g]
 
 compactStyle :: forall action. Attribute action
 compactStyle = style do

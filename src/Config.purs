@@ -14,7 +14,7 @@ type Config =
 
 init :: Config
 init = { fastTurn: false
-       , demo: false
+       , demo: true
        }
 
 turnDelay :: forall state action. BoardView state action
