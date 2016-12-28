@@ -25,7 +25,8 @@ class BoardView state action | state -> action where
   getCurrentPlayer :: state -> Maybe Player
   getPitAction :: state -> PitRef -> Maybe action
 
-isPlaying :: forall state action. BoardView state action => state -> Player -> Boolean
+isPlaying :: forall state action. BoardView state action
+          => state -> Player -> Boolean
 isPlaying state player = fromMaybe false $ do
   currentPlayer <- getCurrentPlayer state
   pure $ player == currentPlayer
@@ -40,8 +41,19 @@ pitState state ref = do
     then getTurn state
     else Nothing
 
+playerColor :: Player -> Color
+playerColor A = C.blue # C.lighten 0.2
+playerColor B = C.red # C.lighten 0.2
+
+dynamicPlayerColor :: forall state action. BoardView state action
+                   => state -> Player -> Color
+dynamicPlayerColor state player =
+  if isPlaying state player
+    then playerColor player
+    else playerColor player
+
 pitColor :: PitState -> Color
-pitColor (Just (Turn.Capture _)) = hsl 300.0 1.0 0.3
+pitColor (Just (Turn.Capture player)) = playerColor player
 pitColor (Just Turn.Lift) = hsl 150.0 1.0 0.3
 pitColor (Just Turn.Sow) = C.lighten 0.4 $ pitColor Nothing
 pitColor _ = hsl 70.0 1.0 0.3
@@ -68,9 +80,7 @@ viewStore state player =
     where s = viewPlayer player <> showPadded seeds
           seeds = getStore player board
           board = getBoard state
-          color = if isPlaying state player
-                    then pitColor (Just Turn.Sow)
-                    else pitColor Nothing # C.darken 0.1
+          color = dynamicPlayerColor state player
           css = style do
             C.display C.inlineFlex
             C.textAlign C.center
@@ -78,10 +88,11 @@ viewStore state player =
             C.backgroundColor color
             C.width (pct 40.0)
             C.height (em 6.0)
-            C.marginLeft (pct 15.0)
-            C.border C.solid (px 1.0) C.black
+            C.marginLeft (pct 25.0)
             C.padding (em 0.0) (em padding) (em 0.0) (em padding)
+            C.border C.dotted (px border) C.black
               where padding = 0.5
+                    border = if isPlaying state player then 9.5 else 0.0
 
 
 viewPit :: forall action state. BoardView state action
