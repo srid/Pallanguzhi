@@ -10,7 +10,7 @@ import Data.Array (filter, zipWith)
 import Data.Foldable (maximum)
 import Data.Maybe (Maybe)
 import Data.Tuple (Tuple(..))
-import Prelude (class Eq, class Ord, class Show, compare, eq, not, show, ($), (&&), (<$>), (<<<), (<>), (==), (>))
+import Prelude (class Eq, class Ord, class Show, compare, eq, not, show, ($), (&&), (-), (<$>), (<<<), (<>), (==), (>))
 
 newtype Selection = Selection (Tuple PitRef Int)
 
@@ -30,14 +30,18 @@ selection ref = Selection <<< Tuple ref
 
 suggest :: Player -> Board -> Maybe Selection
 suggest player board = bestRef
-  where bestRef = maximum $ zipWith selection refs (Board.getStore player <$> moves)
+  where bestRef = maximum $ zipWith selection refs (effectiveScore player <$> moves)
         moves = simulateMove player board <$> refs
         refs = filter validPit $ Board.refs player
         validPit r = Board.hasSeeds r board && not Board.isBlocked r board
-
 
 simulateMove :: Player -> Board -> PitRef -> Board
 simulateMove player board ref = Tuple.snd finalState
   where finalState = Turn.applyTurns (Turn.unfoldTurns state) state
         state = Tuple hand board
         hand = Hand.init player ref
+
+effectiveScore :: Player -> Board -> Int
+effectiveScore player board = playerStore - opponentStore
+  where playerStore = Board.getStore player board
+        opponentStore = Board.getStore (Board.opponentOf player) board
