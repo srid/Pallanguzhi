@@ -90,10 +90,10 @@ blockPit :: PitRef -> Board -> Board
 blockPit ref board = board { blockedCells = ref : board.blockedCells }
 
 lookup :: PitRef -> Board -> Pit
-lookup ref board = FM.lookup ref board.cells
+lookup ref = FM.lookup ref <<< _.cells
 
 mapPit :: forall a. PitRef -> (Pit -> a) -> Board -> a
-mapPit ref f board = f $ lookup ref board
+mapPit ref f = f <<< lookup ref
 
 mapPit2 :: forall a. PitRef -> (Pit -> Pit -> a) -> Board -> a
 mapPit2 ref1 f board = mapPit ref1 g board
@@ -143,5 +143,5 @@ unstore B count board = do
   pure $ board { storeB = board.storeB - count }
 
 getStore :: Player -> Board -> Pit
-getStore A board = board.storeA
-getStore B board = board.storeB
+getStore A = _.storeA
+getStore B = _.storeB
