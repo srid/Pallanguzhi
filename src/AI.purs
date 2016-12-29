@@ -6,12 +6,14 @@ import App.Turn as Turn
 import Data.Tuple as Tuple
 import App.Board (Board, PitRef, Player, opponentOf)
 import App.FixedMatrix72 (Ref(..), Row(..))
+import Control.MonadZero (guard)
 import Data.Array (filter, zipWith)
 import Data.Foldable (maximum, maximumBy)
-import Data.Maybe (Maybe, fromJust)
+import Data.Maybe (Maybe, fromJust, fromMaybe, isJust)
+import Data.Traversable (sequence, traverse)
 import Data.Tuple (Tuple(..))
 import Partial.Unsafe (unsafePartial)
-import Prelude (class Eq, class Ord, class Show, compare, eq, not, show, ($), (&&), (-), (<$>), (<*>), (<<<), (<>), (==), (>))
+import Prelude (class Eq, class Monad, class Ord, class Show, bind, compare, eq, map, not, pure, show, ($), (&&), (-), (<$>), (<*>), (<<<), (<>), (==), (>))
 
 newtype Selection = Selection (Tuple PitRef Board)
 
@@ -36,29 +38,37 @@ instance showSelection :: Show Selection where
 selection :: PitRef -> Board -> Selection
 selection ref = Selection <<< Tuple ref
 
-suggest :: Boolean -> Player -> Board -> Selection
-suggest shallow player board = unsafePartial fromJust $ bestSelection
+suggest :: Boolean -> Player -> Board -> Maybe Selection
+suggest shallow player board = bestSelection
   where bestSelection =
           maximumBy bestOf selections
         selections =
-          zipWith selection refs finalBoards
+          zipWith selection refs $ getJusts finalBoards
         bestOf s1 s2 =
-          case shallow of
-            true  -> compare (getScore s1) (getScore s2)
-            false -> compare (getScore s1) (getScore s2)
+          compare (getScore s1) (getScore s2)
         finalBoards =
           case shallow of
-            true  -> simulateMove player board <$> refs
-            false -> (getBoard <<< suggest true (opponentOf player)) <$> (simulateMove player board <$> refs)
+            true  -> nextBoards
+            false -> (map getBoard <<< suggest true (opponentOf player)) <$> getJusts nextBoards
+        nextBoards =
+          simulateMove player board <$> refs
         refs =
-          filter validPit $ Board.refs player
-        validPit r =
-          Board.hasSeeds r board && not Board.isBlocked r board
+          filter (canLift board) $ Board.refs player
 
-simulateMove :: Player -> Board -> PitRef -> Board
-simulateMove player board ref = Tuple.snd $ Turn.run state
-  where state = Tuple hand board
-        hand = Hand.init player ref
+-- TODO: Move to util.purs
+getJusts :: forall a. Array (Maybe a) -> Array a
+getJusts = fromMaybe [] <<< sequence <<< filter isJust
+
+-- TODO: move to Board.purs
+canLift :: Board -> PitRef -> Boolean
+canLift board r = Board.hasSeeds r board && not Board.isBlocked r board
+
+simulateMove :: Player -> Board -> PitRef -> Maybe Board
+simulateMove player board ref = do
+  guard $ canLift board ref
+  pure $ Tuple.snd $ Turn.run state
+    where state = Tuple hand board
+          hand = Hand.init player ref
 
 effectiveScore :: Player -> Board -> Int
 effectiveScore player board = playerStore - opponentStore
