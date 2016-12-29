@@ -5,7 +5,7 @@ import Data.Array (mapWithIndex)
 import Data.Maybe (fromJust)
 import Matrix (Matrix)
 import Partial.Unsafe (unsafePartial)
-import Prelude (class Eq, class Show, show, ($), (&&), (<<<), (<>), (==))
+import Prelude (class Eq, class Show, show, ($), (&&), (<$>), (<<<), (<>), (==))
 
 -- | Matrix of fixed size 7 columns x 2 rows
 -- | Flexibility in size might be in order when other Mancala boards will be added.
@@ -57,6 +57,9 @@ mapRowWithIndex :: forall a b. Row -> (Ref -> a -> b) -> FixedMatrix72 a -> Arra
 mapRowWithIndex row f = mapWithIndex f' <<< getRow row
   where f' = f <<< makeRef row
 
+getValues :: forall a. FixedMatrix72 a -> Array a
+getValues (FixedMatrix72 m) = _.value <$> Matrix.toIndexedArray m
+        
 rowToInt :: Row -> Int
 rowToInt A = 0
 rowToInt B = 1
