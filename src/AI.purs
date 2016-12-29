@@ -14,7 +14,7 @@ import Data.Maybe (Maybe(..), fromJust, fromMaybe, isJust)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (Tuple(..), fst)
 import Partial.Unsafe (unsafePartial)
-import Prelude (class Eq, class Monad, class Ord, class Show, bind, compare, const, eq, map, not, pure, show, ($), (&&), (+), (-), (<$>), (<*>), (<<<), (<>), (==), (>))
+import Prelude (class Eq, class Monad, class Ord, class Show, bind, compare, const, eq, map, not, pure, show, ($), (&&), (+), (-), (/), (<$>), (<*>), (<<<), (<>), (==), (>))
 
 -- TODO: Move to util.purs
 getJusts :: forall a. Array (Maybe a) -> Array a
@@ -29,10 +29,12 @@ bestMove board player =
 
 score :: Board -> Player -> Maybe Move -> Int
 score startBoard player Nothing =
-  extra + effectiveScore player startBoard
-    where extra = sum $ getValues startBoard.cells
+  (sumInPit startBoard) + effectiveScore player startBoard
 score startBoard player (Just (Tuple _ nextBoard)) =
   effectiveScore player nextBoard
+
+sumInPit :: Board -> Int
+sumInPit = sum <<< getValues <<< _.cells
 
 bestMove2 :: Board -> Player -> Maybe Move
 bestMove2 board player =
@@ -42,6 +44,16 @@ bestMove2 board player =
           oppMove (Tuple r b) = bestMove b (opponentOf player)
           bestOf (Tuple _ s1) (Tuple _ s2) =
             compare s1 s2
+
+bestMove3 :: Board -> Player -> Maybe Move
+bestMove3 board player =
+  fst <$> (maximumBy bestOf $ zipWith Tuple moves (calcScore <$> moves))
+    where moves = possibleMoves board player
+          calcScore m@(Tuple r b) = score b player (oppMove m)
+          oppMove (Tuple r b) = bestMove2 b (opponentOf player)
+          bestOf (Tuple _ s1) (Tuple _ s2) =
+            compare s1 s2
+
 
 possibleMoves :: Board -> Player -> Array Move
 possibleMoves board player =
@@ -60,6 +72,6 @@ simulateMove player board ref = Tuple.snd $ Turn.run state
           hand = Hand.init player ref
 
 effectiveScore :: Player -> Board -> Int
-effectiveScore player board = playerStore - opponentStore
+effectiveScore player board = playerStore + ((sumInPit board) / 2)-- opponentStore
   where playerStore = Board.getStore player board
         opponentStore = Board.getStore (Board.opponentOf player) board

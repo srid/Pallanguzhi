@@ -59,7 +59,7 @@ mapRowWithIndex row f = mapWithIndex f' <<< getRow row
 
 getValues :: forall a. FixedMatrix72 a -> Array a
 getValues (FixedMatrix72 m) = _.value <$> Matrix.toIndexedArray m
-        
+
 rowToInt :: Row -> Int
 rowToInt A = 0
 rowToInt B = 1
