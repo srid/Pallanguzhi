@@ -10,11 +10,13 @@ import Pux.Html (Html)
 type Config =
   { fastTurn :: Boolean
   , demo :: Boolean
+  , aiSuggest :: Boolean
   }
 
 init :: Config
-init = { fastTurn: false
-       , demo: true
+init = { fastTurn: true
+       , demo: false
+       , aiSuggest: true
        }
 
 turnDelay :: forall state action. BoardView state action
@@ -34,7 +36,9 @@ view config =
     [ H.text $ "[Game Config] fastTurn="
             <> show config.fastTurn
             <> "; demo="
-            <> show config.demo ]
+            <> show config.demo
+            <> "; aiSuggest="
+            <> show config.aiSuggest ]
     -- TODO: UI for config toggling
     -- [ H.text $ "Enable fast turn:"
     -- , H.option [A.checked config.fastTurn] []

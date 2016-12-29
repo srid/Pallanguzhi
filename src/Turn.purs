@@ -6,6 +6,7 @@ import App.Board (Board, Player)
 import App.FixedMatrix72 (Ref(..), getRow)
 import App.Hand (Hand)
 import Data.Maybe (Maybe(..))
+import Data.Tuple as Tuple
 import Data.Tuple (Tuple(..))
 import Data.Unfoldable (class Unfoldable, unfoldr)
 import Prelude (class Eq, class Show, eq, flip, map, show, (#), ($), (+), (-), (<<<), (<>), (==))
@@ -63,6 +64,9 @@ nextTurns state@(Tuple hand@{player, seeds, pitRef} board) =
 
 applyTurns :: List Turn -> State -> State
 applyTurns turns s = foldl (flip runTurn) s turns
+
+run :: State -> State
+run state = (applyTurns <<< unfoldTurns) state state
 
 -- All turns
 

@@ -1,25 +1,26 @@
 -- / Game round
 module App.Round where
 
-import App.Config (Config)
-import App.Config as Config
+import App.AI as AI
 import App.Board as Board
 import App.BoardView as BoardView
+import App.Config as Config
+import App.FixedMatrix72 as FM
 import App.Hand as Hand
 import App.Turn as Turn
 import Data.List as List
-import Data.Foldable (all)
 import App.Board (Board, Player, PitRef, opponentOf)
 import App.BoardView (class BoardView)
-import App.FixedMatrix72 as FM
+import App.Config (Config)
 import App.Hand (Hand)
 import App.Turn (Turn)
 import Control.Monad.Aff (later')
 import Data.Either (Either(..))
+import Data.Foldable (all)
 import Data.List (List, length, uncons)
 import Data.Maybe (Maybe(Nothing, Just))
-import Data.Tuple (Tuple(..))
-import Prelude (bind, pure, show, unit, (#), ($), (<>), (>), (==), (<<<))
+import Data.Tuple (Tuple(..), fst)
+import Prelude (bind, pure, show, unit, (#), ($), (<$>), (<<<), (<>), (==), (>))
 import Pux (EffModel, noEffects)
 import Pux.Html (Html, div, text)
 
@@ -120,9 +121,8 @@ allPitsEmptyFor :: Player -> Board -> Boolean
 allPitsEmptyFor player = all ((==) 0) <<< FM.getRow player <<< _.cells
 
 awaitOpponent :: Hand -> Board -> State
-awaitOpponent hand =
-  Awaiting Nothing opponent
-    where opponent = opponentOf hand.player
+awaitOpponent hand = Awaiting Nothing opponent
+  where opponent = opponentOf hand.player
 
 -- View
 
@@ -132,10 +132,16 @@ view state =
     [ heading state
     , BoardView.view state
     , errorDiv state
+    , aiSuggestView state
     ]
     where errorDiv (Awaiting (Just error) _ _) =
             div [] [ text $ "ERROR: " <> error ]
           errorDiv _ =
+            div [] []
+          aiSuggestView (Awaiting _ player board) =
+            div [] [ text $ "Suggested move: " <> show (fst <$> move) ]
+              where move = AI.bestMove2 board player
+          aiSuggestView _ =
             div [] []
           heading (Turning hand board _ turns) =
             div [] [ text $ BoardView.viewPlayer hand.player

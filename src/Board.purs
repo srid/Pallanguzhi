@@ -6,7 +6,7 @@ import App.FixedMatrix72 (Ref(Ref), Row(..))
 import Control.MonadZero (guard)
 import Data.Array ((..), (:))
 import Data.Maybe (Maybe(..))
-import Prelude (bind, const, pure, (#), ($), (*), (+), (-), (<), (<#>), (<$>), (<<<), (==), (>=))
+import Prelude (bind, const, pure, (#), ($), (*), (+), (-), (<), (<#>), (<$>), (<<<), (==), (>), (>=))
 
 type Board =
   { cells :: FM.FixedMatrix72 Pit
@@ -69,6 +69,10 @@ opponentOf B = A
 isBlocked :: PitRef -> Board -> Boolean
 isBlocked ref = elem ref <<< _.blockedCells
 
+hasSeeds :: PitRef -> Board -> Boolean
+hasSeeds ref board = seeds > 0
+  where seeds = lookup ref board
+
 nextRef :: PitRef -> Board -> PitRef
 nextRef ref board =
   if isBlocked next board
@@ -86,10 +90,10 @@ blockPit :: PitRef -> Board -> Board
 blockPit ref board = board { blockedCells = ref : board.blockedCells }
 
 lookup :: PitRef -> Board -> Pit
-lookup ref board = FM.lookup ref board.cells
+lookup ref = FM.lookup ref <<< _.cells
 
 mapPit :: forall a. PitRef -> (Pit -> a) -> Board -> a
-mapPit ref f board = f $ lookup ref board
+mapPit ref f = f <<< lookup ref
 
 mapPit2 :: forall a. PitRef -> (Pit -> Pit -> a) -> Board -> a
 mapPit2 ref1 f board = mapPit ref1 g board
@@ -139,5 +143,5 @@ unstore B count board = do
   pure $ board { storeB = board.storeB - count }
 
 getStore :: Player -> Board -> Pit
-getStore A board = board.storeA
-getStore B board = board.storeB
+getStore A = _.storeA
+getStore B = _.storeB
